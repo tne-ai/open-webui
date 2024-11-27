@@ -1056,11 +1056,19 @@
 					}
 
 					let _response = null;
-					if (model?.owned_by === 'ollama') {
+					if (model?.id.includes("tne")) {
+						_response = await sendPromptBP_RUNNER(model, prompt, responseMessageId, _chatId);
+					}
+					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
-					} else if (model) {
+					} 
+					// else if (model?.owned_by == 'tne') {
+					// 	_response = await sendPromptBP_RUNNER(model, prompt, responseMessageID, _chatId);
+					// }
+					else if (model) {
 						_response = await sendPromptOpenAI(model, prompt, responseMessageId, _chatId);
 					}
+					// _response = await sendPromptBP_RUNNER(model, prompt, responseMessageID, _chatId);
 					_responses.push(_response);
 
 					if (chatEventEmitter) clearInterval(chatEventEmitter);
@@ -1781,6 +1789,181 @@
 			if ($settings?.autoTags ?? true) {
 				await setChatTags(messages);
 			}
+		}
+
+		return _response;
+	};
+
+	const sendPromptBP_RUNNER = async (model, userPrompt, responseMessageId, _chatId) => {
+		let _response: string | null = null;
+
+		const responseMessage = history.messages[responseMessageId];
+		const userMessage = history.messages[responseMessage.parentId];
+		await tick();
+
+		// Scroll down
+		scrollToBottom();
+
+		try {
+			const messagesBody = [
+				params?.system || $settings.system || (responseMessage?.userContext ?? null)
+					? {
+						role: 'system',
+						content: `${promptTemplate(
+							params?.system ?? $settings?.system ?? '',
+							$user.name,
+							$settings?.userLocation
+								? await getAndUpdateUserLocation(localStorage.token)
+								: undefined
+						)}${
+							(responseMessage?.userContext ?? null)
+								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+								: ''
+						}`
+					}
+					: undefined,
+				...createMessagesList(responseMessageId)
+			].filter(message => message?.content?.trim());
+
+			// Dispatch start event
+			eventTarget.dispatchEvent(
+				new CustomEvent('chat:start', {
+					detail: {
+						id: responseMessageId
+					}
+				})
+			);
+
+			// Make the API call
+			const response = await fetch('http://localhost:8080/infer', {
+				method: 'POST',
+				headers: {
+					"accept": "application/json",
+					"Content-Type": "application/json",
+					"X-Amzn-Trace-Id": "1234",
+					"Authorization": "Bearer sk-KI_5bJ1bJX-HLSfCwdxmjVaamg33twQ1l8jKE59MUyeZGhQpyNLTusAuWbdrcMmsUwuLWK-fEGToYItL",
+				},
+				body: JSON.stringify({
+					text: userMessage.content,
+					uid: "114520153332760575553"
+				})
+			});
+
+			if (response.ok) {
+				const reader = response.body
+					.pipeThrough(new TextDecoderStream())
+					.pipeThrough(splitStream('\n'))
+					.getReader();
+
+				while (true) {
+					const { value, done } = await reader.read();
+					if (done || stopResponseFlag || _chatId !== $chatId) {
+						responseMessage.done = true;
+						history.messages[responseMessageId] = responseMessage;
+
+						if (stopResponseFlag) {
+							// Handle stop if needed
+						}
+
+						_response = responseMessage.content;
+						break;
+					}
+
+					try {
+						// Handle the streaming response
+						responseMessage.content += value;
+						
+						// Update UI with new content
+						if (navigator.vibrate && ($settings?.hapticFeedback ?? false)) {
+							navigator.vibrate(5);
+						}
+
+						const messageContentParts = getMessageContentParts(
+							responseMessage.content,
+							$config?.audio?.tts?.split_on ?? 'punctuation'
+						);
+						messageContentParts.pop();
+
+						// Dispatch event for new content
+						if (
+							messageContentParts.length > 0 &&
+							messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
+						) {
+							responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
+							eventTarget.dispatchEvent(
+								new CustomEvent('chat', {
+									detail: {
+										id: responseMessageId,
+										content: messageContentParts[messageContentParts.length - 1]
+									}
+								})
+							);
+						}
+
+						history.messages[responseMessageId] = responseMessage;
+					} catch (error) {
+						console.error('Error processing response:', error);
+						break;
+					}
+
+					if (autoScroll) {
+						scrollToBottom();
+					}
+				}
+			} else {
+				throw new Error(`API request failed: ${response.statusText}`);
+			}
+		} catch (error) {
+			console.error('Error:', error);
+			responseMessage.error = {
+				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
+					provider: 'BP Runner'
+				})
+			};
+			responseMessage.done = true;
+		}
+
+		// Save the chat
+		await saveChatHandler(_chatId);
+		history.messages[responseMessageId] = responseMessage;
+
+		// Handle chat completion
+		await chatCompletedHandler(
+			_chatId,
+			model.id,
+			responseMessageId,
+			createMessagesList(responseMessageId)
+		);
+
+		stopResponseFlag = false;
+		await tick();
+
+		// Send final events
+		let lastMessageContentPart =
+			getMessageContentParts(
+				responseMessage.content,
+				$config?.audio?.tts?.split_on ?? 'punctuation'
+			)?.at(-1) ?? '';
+		if (lastMessageContentPart) {
+			eventTarget.dispatchEvent(
+				new CustomEvent('chat', {
+					detail: { id: responseMessageId, content: lastMessageContentPart }
+				})
+			);
+		}
+
+		eventTarget.dispatchEvent(
+			new CustomEvent('chat:finish', {
+				detail: {
+					id: responseMessageId,
+					content: responseMessage.content
+				}
+			})
+		);
+
+		// Final scroll
+		if (autoScroll) {
+			scrollToBottom();
 		}
 
 		return _response;
