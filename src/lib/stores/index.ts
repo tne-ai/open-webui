@@ -67,6 +67,12 @@ export interface OpenAIModel extends BaseModel {
 	source?: string;
 }
 
+export interface TNEModel extends BaseModel {
+    owned_by: 'tne';
+    details?: TNEModelDetails;
+    description?: string;
+}
+
 export interface OllamaModel extends BaseModel {
 	owned_by: 'ollama';
 	details: OllamaModelDetails;
