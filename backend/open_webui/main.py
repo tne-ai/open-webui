@@ -303,7 +303,6 @@ from open_webui.utils.auth import (
     get_verified_user,
 )
 from open_webui.utils.oauth import oauth_manager
-from open_webui.utils.security_headers import SecurityHeadersMiddleware
 
 from open_webui.tasks import stop_task, list_tasks  # Import from tasks.py
 
@@ -695,8 +694,13 @@ class RedirectMiddleware(BaseHTTPMiddleware):
 
 # Add the middleware to the app
 app.add_middleware(RedirectMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.middleware("http")
 async def commit_session_after_request(request: Request, call_next):
