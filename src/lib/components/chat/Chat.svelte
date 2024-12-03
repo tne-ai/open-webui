@@ -1840,12 +1840,10 @@
 				headers: {
 					"accept": "application/json",
 					"Content-Type": "application/json",
-					"X-Amzn-Trace-Id": "1234",
-					"Authorization": "Bearer sk-KI_5bJ1bJX-HLSfCwdxmjVaamg33twQ1l8jKE59MUyeZGhQpyNLTusAuWbdrcMmsUwuLWK-fEGToYItL",
 				},
 				body: JSON.stringify({
 					text: userMessage.content,
-					uid: "114520153332760575553"
+					uid: "google-oauth|114520153332760575553"
 				})
 			});
 
