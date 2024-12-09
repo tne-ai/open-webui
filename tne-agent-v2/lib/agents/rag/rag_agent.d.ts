@@ -2,7 +2,10 @@ import { AgentFunction } from "graphai";
 export declare const ragAgent: AgentFunction<{
     ragDbName: string;
     ragServerUrl: string;
-}, Record<string, unknown>, null, {
+}, {
+    rag_output: string;
+    anns_summary: string;
+}, null, {
     userInput: string;
     array: string[];
 }>;
