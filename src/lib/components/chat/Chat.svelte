@@ -14,6 +14,9 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
+	import { ChunkParser, tneAgents } from '@tne/tne-agent-v2';
+	import { pythonCodeAgent } from '@tne/tne-agent-v2';
+
 	import {
 		chatId,
 		chats,

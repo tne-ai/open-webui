@@ -50,6 +50,7 @@ export declare const codeGenerationAgent: (node: CodeGenerationReactFlowNode, ll
                 if?: string;
                 unless?: string;
                 graph?: import("graphai").GraphData | string;
+                graphLoader?: import("graphai").GraphDataLoaderOption;
                 isResult?: boolean;
                 priority?: number;
                 passThrough?: import("graphai/lib/type").PassThrough;
