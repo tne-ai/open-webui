@@ -1,0 +1,27 @@
+id: hVRGJ_KMEwGGr_yx4x7YC
+type: llm
+position:
+  x: 514.4507821883481
+  "y": 333.66080416604774
+data:
+  id: hVRGJ_KMEwGGr_yx4x7YC
+  agent: llmAgent
+  params:
+    tneModel: Image
+    mapping: ""
+    outputType: overwrite
+    toolJson: ""
+    toolCode: ""
+    useUserQuery: false
+  passThrough:
+    nodeType: llm
+    nodeId: hVRGJ_KMEwGGr_yx4x7YC
+    nodeTitle: image
+  isResult: true
+width: 209
+height: 465
+selected: true
+positionAbsolute:
+  x: 514.4507821883481
+  "y": 333.66080416604774
+dragging: false

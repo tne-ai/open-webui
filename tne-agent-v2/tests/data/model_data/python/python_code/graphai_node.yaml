@@ -1,0 +1,9 @@
+agent: pythonCodeAgent
+params:
+  code: |
+    import
+passThrough:
+  nodeType: pythonCode
+  nodeId: 7zjI_el3t2Si2Kz_oZcBh
+  nodeTitle: "Python 2"
+isResult: true

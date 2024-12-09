@@ -1,0 +1,38 @@
+{
+  "name": "@tne/tne-agent-v2",
+  "version": "0.0.1",
+  "description": "",
+  "main": "lib/index.js",
+  "files": [
+    "./lib"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "eslint": "eslint src && npx tsc -noEmit",
+    "format": "prettier --write '{src,tests}/**/*.{ts,yaml,yml,json}'",
+    "format-check": "prettier --check '{src,tests}/**/*.{ts,yaml,yml,json}'",
+    "test": "node --test --require ts-node/register ./tests/**/test_*.ts",
+    "run": "node --test --require ts-node/register ./tests/**/run_*.ts",
+    "node": "node --test --require ts-node/register",
+    "ci_test": "node --test --require ts-node/register ./ie_tests/test_runner.ts",
+    "ci": "npm run eslint && npm run format-check && npm run test"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "author": "tne",
+  "license": "UNLICENSED",
+  "devDependencies": {},
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.682.0",
+    "@graphai/agents": "^0.1.5",
+    "@graphai/vanilla": "^0.1.6",
+    "graphai": "^0.5.14",
+    "yaml": "^2.5.1"
+  },
+  "types": "./lib/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  }
+}

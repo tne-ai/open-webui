@@ -1,0 +1,27 @@
+id: r_s9Kkt9xaaUUZJYKsIe4
+type: llm
+position:
+  x: 1519.3734635046192
+  "y": 672.1500963327927
+data:
+  id: r_s9Kkt9xaaUUZJYKsIe4
+  agent: llmAgent
+  params:
+    tneModel: GraphAI
+    mapping: ""
+    outputType: overwrite
+    toolJson: ""
+    toolCode: ""
+    useUserQuery: false
+  passThrough:
+    nodeType: llm
+    nodeId: r_s9Kkt9xaaUUZJYKsIe4
+    nodeTitle: "123"
+  isResult: true
+width: 209
+height: 465
+selected: false
+positionAbsolute:
+  x: 1519.3734635046192
+  "y": 672.1500963327927
+dragging: false
