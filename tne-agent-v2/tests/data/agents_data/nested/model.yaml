@@ -1,0 +1,11 @@
+agent: openAIAgent
+params:
+  model: gpt-4o
+  max_tokens: 500
+  temperature: 0
+  mergeableSystem: "123"
+  stream: true
+passThrough:
+  nodeType: openAI
+  nodeTitle: GraphAI
+  database: ""

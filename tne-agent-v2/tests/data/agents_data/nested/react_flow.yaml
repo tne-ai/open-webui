@@ -1,0 +1,23 @@
+id: KExRlTnIvrIYOavj3sgej
+type: nested
+position:
+  x: 1489.5489561260354
+  "y": 1050.22524467084
+data:
+  id: KExRlTnIvrIYOavj3sgej
+  agent: nestedAgent
+  params:
+    graphDataFile: Create Dataframe
+    outputType: dispatch
+  passThrough:
+    nodeType: nested
+    nodeId: KExRlTnIvrIYOavj3sgej
+    nodeTitle: expert
+  isResult: false
+width: 250
+height: 309
+selected: false
+positionAbsolute:
+  x: 1489.5489561260354
+  "y": 1050.22524467084
+dragging: false

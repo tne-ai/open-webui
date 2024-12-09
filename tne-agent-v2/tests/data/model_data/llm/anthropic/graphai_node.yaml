@@ -1,0 +1,12 @@
+agent: "anthropicAgent"
+params:
+  max_tokens: 500
+  mergeableSystem: Summarize the text given to you.
+  model: claude-3-haiku-20240307
+  stream: true
+  temperature: 0
+passThrough:
+  nodeType: anthropic
+  nodeId: cWnxjsYMAlzxHV5rhh5BX
+  nodeTitle: Anthropic
+isResult: true
