@@ -1,0 +1,11 @@
+id: FuN_kk_xNkwtfNHdVz9rR
+type: code_generation
+data:
+  id: FuN_kk_xNkwtfNHdVz9rR
+  title: Generate Code
+  prompt: aaa
+  outputType: overwrite
+  outputToCanvas: false
+  apiKey: OPENAI_API_KEY
+  engineName: openai-gpt
+  modelName: gpt-4o

@@ -1,0 +1,9 @@
+id: 0fJTMuuy4b7dCFjK2qoH2
+type: rag
+data:
+  id: 0fJTMuuy4b7dCFjK2qoH2
+  title: RAG Test
+  ragDbName: rag_v2_rich_papers
+  outputType: overwrite
+  outputToCanvas: false
+  showDebug: false

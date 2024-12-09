@@ -1,0 +1,25 @@
+id: n3-LF1YWYsHeXmUQ9UQOp
+type: code_generation
+position:
+  x: 1028.6750150574599
+  "y": 825.8549620959296
+data:
+  id: n3-LF1YWYsHeXmUQ9UQOp
+  agent: codeGenerationAgent
+  params:
+    prompt: "123"
+    tneModel: GraphAI
+    outputType: overwrite
+    useUserQuery: false
+  passThrough:
+    nodeType: code_generation
+    nodeId: n3-LF1YWYsHeXmUQ9UQOp
+    nodeTitle: Generate Code
+  isResult: false
+width: 211
+height: 465
+selected: false
+positionAbsolute:
+  x: 1028.6750150574599
+  "y": 825.8549620959296
+dragging: false

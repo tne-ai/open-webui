@@ -1,0 +1,11 @@
+title: Llama3
+model:
+  engine_name: replicate
+  model_name: meta/meta-llama-3-70b-instruct
+  api_key: REPLICATE_API_TOKEN
+temperature: 0
+max_tokens: 500
+database: ''
+stream: true
+prompt: |
+  Summarize the text you're given.

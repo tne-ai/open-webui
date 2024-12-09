@@ -1,0 +1,107 @@
+nodes:
+  - id: EJVuxYpDuSNJxjJb-nSmp
+    type: llm
+    position:
+      x: 1600
+      'y': 498
+    data:
+      id: EJVuxYpDuSNJxjJb-nSmp
+      agent: llmAgent
+      params:
+        tneModel: fashion.model
+        mapping: ''
+        outputType: overwrite
+        toolJson: ''
+        toolCode: ''
+        useUserQuery: false
+      passThrough:
+        nodeType: llm
+        nodeId: EJVuxYpDuSNJxjJb-nSmp
+        nodeTitle: Fashion
+      isResult: true
+    width: 212
+    height: 426
+    selected: false
+    dragging: false
+  - id: 5JskYC_J_k8ja0EIDPvDw
+    type: file
+    position:
+      x: 1369.9951803132728
+      'y': -45.02967618418238
+    data:
+      id: 5JskYC_J_k8ja0EIDPvDw
+      agent: s3FileAgent
+      params:
+        fileName: hipster1.jpeg
+      passThrough:
+        nodeType: file
+        nodeId: 5JskYC_J_k8ja0EIDPvDw
+        nodeTitle: Image 1
+    width: 212
+    height: 426
+    selected: false
+    positionAbsolute:
+      x: 1369.9951803132728
+      'y': -45.02967618418238
+    dragging: false
+  - id: 6P8IDnDHZeI3xjthF_z8R
+    type: file
+    position:
+      x: 1598.2601351647647
+      'y': -43.79566554902239
+    data:
+      id: 6P8IDnDHZeI3xjthF_z8R
+      agent: s3FileAgent
+      params:
+        fileName: hipster2.jpeg
+      passThrough:
+        nodeType: file
+        nodeId: 6P8IDnDHZeI3xjthF_z8R
+        nodeTitle: Image 2
+    width: 212
+    height: 426
+    selected: false
+    positionAbsolute:
+      x: 1598.2601351647647
+      'y': -43.79566554902239
+    dragging: false
+  - id: iBWAtmiXifH79EdTOl2gs
+    type: file
+    position:
+      x: 1827.1158297379397
+      'y': -49.42362916906841
+    data:
+      id: iBWAtmiXifH79EdTOl2gs
+      agent: s3FileAgent
+      params:
+        fileName: hipster3.jpeg
+      passThrough:
+        nodeType: file
+        nodeId: iBWAtmiXifH79EdTOl2gs
+        nodeTitle: Image 3
+    width: 212
+    height: 426
+    selected: true
+    positionAbsolute:
+      x: 1827.1158297379397
+      'y': -49.42362916906841
+    dragging: false
+edges:
+  - id: UEvLlr
+    source: iBWAtmiXifH79EdTOl2gs
+    sourceHandle: b
+    target: EJVuxYpDuSNJxjJb-nSmp
+    targetHandle: t
+  - id: vQjmki
+    source: 5JskYC_J_k8ja0EIDPvDw
+    sourceHandle: b
+    target: EJVuxYpDuSNJxjJb-nSmp
+    targetHandle: t
+  - id: 9gnFfD
+    source: 6P8IDnDHZeI3xjthF_z8R
+    sourceHandle: b
+    target: EJVuxYpDuSNJxjJb-nSmp
+    targetHandle: t
+description: >-
+  Runs image models to collate fashion recommendations based off of a given set
+  of images.

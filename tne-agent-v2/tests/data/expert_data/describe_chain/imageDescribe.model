@@ -1,0 +1,12 @@
+agent: openAIAgent
+params:
+  model: gpt-4-vision-preview
+  max_tokens: 500
+  temperature: 0
+  mergeableSystem: 'Describe the given image(s)'
+  stream: false
+passThrough:
+  nodeType: openAI
+  nodeTitle: imageDescribe
+  database: ''
+
