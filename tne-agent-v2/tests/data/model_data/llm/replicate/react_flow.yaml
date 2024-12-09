@@ -1,0 +1,11 @@
+id: udECTKgTvKwXu18dbybw7
+type: llm
+data:
+  id: udECTKgTvKwXu18dbybw7
+  title: New Model
+  input: ""
+  slashgptManifest: llama3-8b-instruct.model
+  toolJson: ""
+  toolCode: ""
+  outputType: overwrite
+  outputToCanvas: false

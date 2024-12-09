@@ -1,0 +1,42 @@
+nodes:
+  - id: 0fJTMuuy4b7dCFjK2qoH2
+    type: rag
+    position:
+      x: 732.893276067422
+      'y': 360.19910582163584
+    data:
+      id: 0fJTMuuy4b7dCFjK2qoH2
+      title: RAG Test
+      ragDbName: rag_v2_rich_papers
+      outputType: overwrite
+      outputToCanvas: false
+      showDebug: false
+    width: 241
+    height: 350
+    selected: true
+    dragging: false
+    positionAbsolute:
+      x: 732.893276067422
+      'y': 360.19910582163584
+  - id: X8KFG5MBOPXrnjIu-9K8l
+    type: query
+    position:
+      x: 759.4425516310057
+      'y': 32.923780169768
+    data:
+      id: X8KFG5MBOPXrnjIu-9K8l
+      title: Text
+      input: 'What is Alex Tong''s research niche? '
+    width: 210
+    height: 214
+    selected: false
+    positionAbsolute:
+      x: 759.4425516310057
+      'y': 32.923780169768
+    dragging: false
+edges:
+  - id: HGS_nc
+    source: X8KFG5MBOPXrnjIu-9K8l
+    sourceHandle: t
+    target: 0fJTMuuy4b7dCFjK2qoH2
+    targetHandle: t

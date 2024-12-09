@@ -1,0 +1,11 @@
+agent: groqAgent
+params:
+  model: llama3-70b-8192
+  max_tokens: 500
+  temperature: 0
+  mergeableSystem: 'You are a helpful chat assistant'
+  stream: true
+passThrough:
+  nodeType: groq
+  nodeTitle: groqllama
+  database: ''

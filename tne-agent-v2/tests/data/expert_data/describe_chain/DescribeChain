@@ -1,0 +1,81 @@
+nodes:
+  - id: imauvJ951viIxIEEbCHRy
+    type: llm
+    position:
+      x: 474.22345896189
+      'y': 514.2097823036006
+    data:
+      id: imauvJ951viIxIEEbCHRy
+      agent: llmAgent
+      params:
+        tneModel: dalle.model
+        mapping: ''
+        outputType: overwrite
+        toolJson: ''
+        toolCode: ''
+      passThrough:
+        nodeType: llm
+        nodeId: imauvJ951viIxIEEbCHRy
+        nodeTitle: 'Artist'
+      isResult: true
+    width: 212
+    height: 426
+    selected: false
+    positionAbsolute:
+      x: 474.22345896189
+      'y': 514.2097823036006
+    dragging: false
+  - id: WzvkRpzZFhawZ53j2hkyq
+    type: text
+    position:
+      x: 475.0085653034387
+      'y': 239.74952377497812
+    data:
+      id: WzvkRpzZFhawZ53j2hkyq
+      title: Text
+      value: Cat in the hat
+    width: 212
+    height: 190
+    selected: true
+    positionAbsolute:
+      x: 475.0085653034387
+      'y': 239.74952377497812
+    dragging: false
+  - id: RgfMObdBbR-5LHFnhdZHg
+    type: llm
+    position:
+      x: 798.5341174407755
+      'y': 509.24969027478846
+    data:
+      id: RgfMObdBbR-5LHFnhdZHg
+      agent: llmAgent
+      params:
+        tneModel: imageDescribe.model
+        mapping: ''
+        outputType: overwrite
+        toolJson: ''
+        toolCode: ''
+        useUserQuery: true
+      passThrough:
+        nodeType: llm
+        nodeId: RgfMObdBbR-5LHFnhdZHg
+        nodeTitle: Describe
+      isResult: true
+    width: 212
+    height: 426
+    selected: false
+    positionAbsolute:
+      x: 798.5341174407755
+      'y': 509.24969027478846
+    dragging: false
+edges:
+  - id: 6Thmfe
+    source: imauvJ951viIxIEEbCHRy
+    sourceHandle: r
+    target: RgfMObdBbR-5LHFnhdZHg
+    targetHandle: l
+  - id: k9UGoL
+    source: WzvkRpzZFhawZ53j2hkyq
+    sourceHandle: t
+    target: imauvJ951viIxIEEbCHRy
+    targetHandle: t

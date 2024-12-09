@@ -1,0 +1,12 @@
+agent: openAIImageAgent
+params:
+  max_tokens: 500
+  mergeableSystem: Generate an image pertaining to the user input given to you
+  model: dall-e-3
+  stream: true
+  temperature: 0
+passThrough:
+  nodeType: openAIImage
+  nodeId: imauvJ951viIxIEEbCHRy
+  nodeTitle: Artist
+isResult: true
