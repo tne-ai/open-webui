@@ -5,7 +5,7 @@ const code_generation_utils_1 = require("./code_generation_utils");
 const s3_1 = require("../../utils/s3");
 // inputs
 //  namedInputs
-//    previouse node
+//    previous node
 //      text or file
 //    query
 //      userPrompt

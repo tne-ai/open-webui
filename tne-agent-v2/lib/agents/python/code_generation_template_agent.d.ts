@@ -3,7 +3,13 @@ import { S3Data } from "../../types";
 export declare const codeGenerationTemplateAgent: AgentFunction<{
     prompt: string;
 }, // params
-Record<string, any>, Record<string, never>, {
+{
+    prompt?: string;
+    model: string;
+    system: string;
+    temperature: number;
+    max_tokens: number;
+}, null, {
     file: S3Data[];
     inputs?: string[];
     model?: any;
