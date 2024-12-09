@@ -1,0 +1,59 @@
+nodes:
+  - id: 3R4NZNO_bPobKW3kFCsLh
+    type: nested
+    position:
+      x: 605.4121824654962
+      'y': 401.9057922048139
+    data:
+      id: 3R4NZNO_bPobKW3kFCsLh
+      agent: nestedAgent
+      params:
+        graphDataFile: Create Dataframe
+        outputType: overwrite
+      passThrough:
+        nodeType: nested
+        nodeId: 3R4NZNO_bPobKW3kFCsLh
+        nodeTitle: Create DataFrame
+      isResult: true
+    width: 241
+    height: 310
+    selected: false
+    positionAbsolute:
+      x: 605.4121824654962
+      'y': 401.9057922048139
+    dragging: false
+  - id: dlbCOembbRESraiTrIuTi
+    type: llm
+    position:
+      x: 989.8953651737905
+      'y': 324.37264471641333
+    data:
+      id: dlbCOembbRESraiTrIuTi
+      agent: llmAgent
+      params:
+        tneModel: summarize.model
+        mapping: ''
+        outputType: overwrite
+        toolJson: ''
+        toolCode: ''
+        useUserQuery: false
+      passThrough:
+        nodeType: llm
+        nodeId: dlbCOembbRESraiTrIuTi
+        nodeTitle: Summarize
+      isResult: true
+    width: 212
+    height: 466
+    selected: true
+    positionAbsolute:
+      x: 989.8953651737905
+      'y': 324.37264471641333
+    dragging: false
+edges:
+  - source: 3R4NZNO_bPobKW3kFCsLh
+    sourceHandle: r
+    target: dlbCOembbRESraiTrIuTi
+    targetHandle: l
+    id: Z5Hbyg
+    
+description: null

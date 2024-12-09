@@ -1,0 +1,9 @@
+agent: "semanticAgent"
+params:
+  semanticDbName: "rag_v2_rich_papers"
+  maxEmbeddings: 10
+  similarityThreshold: 0.8
+passThrough:
+  nodeType: semantic
+  nodeId: TDQJpdt4Fe5X8KNU9ooT4
+isResult: true
