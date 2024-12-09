@@ -104,7 +104,7 @@
 		"sortablejs": "^1.15.2",
 		"svelte-sonner": "^0.3.19",
 		"tippy.js": "^6.3.7",
-		"tne-agent-v2": "file:tne-agent-v2",
+		"@tne/tne-agent-v2": "0.0.1",
 		"turndown": "^7.2.0",
 		"uuid": "^9.0.1"
 	},
