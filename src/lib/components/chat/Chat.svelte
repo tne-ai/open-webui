@@ -17,6 +17,7 @@
 	import { GraphAI } from "graphai";
 	import { codeGenerationTemplateAgent, pythonCodeAgent } from '@tne/tne-agent-v2';
 	import { getAgentFilters } from '@tne/tne-agent-v2/src/utils/agentFilter';
+	import { iterativeAnalysis } from '@tne/tne-agent-v2/tests/data/graphai_flows/iterative_analysis';
 
 	import {
 		chatId,
@@ -1646,6 +1647,7 @@
 			// Make the API call
 			const agentFilters = getAgentFilters();
 			const graphai = new GraphAI(
+					iterativeAnalysis,
 					{
 						codeGenerationTemplateAgent,
 						pythonCodeAgent,
