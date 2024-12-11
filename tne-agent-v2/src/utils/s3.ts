@@ -1,7 +1,7 @@
 import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
 import { getEnvironmentValue } from "./utils";
-import { S3Data } from "../types";
+import type { S3Data } from "../types";
 export { S3Data };
 
 export const fetchS3File = async (uid: string, fileName: string, region?: string, bucket?: string, verbose?: boolean) => {
