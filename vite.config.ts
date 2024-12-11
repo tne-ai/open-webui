@@ -39,6 +39,11 @@ export default defineConfig({
 	},
 	server: {
 		port: 5174,
+		fs: {
+			allow: [
+				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/utils"
+			]
+		}
 	},
 	optimizeDeps: {
 		include: ['@tne/tne-agent-v2']
