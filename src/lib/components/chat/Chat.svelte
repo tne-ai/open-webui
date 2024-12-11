@@ -19,6 +19,11 @@
 	import { getAgentFilters } from '@tne/tne-agent-v2/src/utils/agentFilter';
 	import { iterativeAnalysis } from '@tne/tne-agent-v2/tests/data/graphai_flows/iterative_analysis';
 
+
+	(async () => {
+	  const llmAgents = await import("@graphai/llm_agents");
+	})();
+
 	import {
 		chatId,
 		chats,
@@ -1649,6 +1654,7 @@
 			const graphai = new GraphAI(
 					iterativeAnalysis,
 					{
+						...llm_agents,
 						codeGenerationTemplateAgent,
 						pythonCodeAgent,
 					},
