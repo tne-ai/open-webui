@@ -14,15 +14,14 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-	import { GraphAI } from "graphai";
+	import { GraphAI, agentInfoWrapper } from "graphai";
 	import { codeGenerationTemplateAgent, pythonCodeAgent } from '@tne/tne-agent-v2';
 	import { getAgentFilters } from '@tne/tne-agent-v2/src/utils/agentFilter';
 	import { iterativeAnalysis } from '@tne/tne-agent-v2/tests/data/graphai_flows/iterative_analysis';
 
-
-	(async () => {
-	  const llmAgents = await import("@graphai/llm_agents");
-	})();
+	import * as llm_agents from "@graphai/llm_agents";
+	import * as vanilla_agents from "@graphai/vanilla";
+	import { s3FileDummyAgentGenerator } from "@tne/tne-agent-v2/src/agents/s3/s3_file_dummy_agent";
 
 	import {
 		chatId,
@@ -1462,9 +1461,11 @@
 					}
 					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
-
 					else if (model?.id.includes('graphai')) {
 						_response = await sendPromptGraphAI(model, prompt, responseMessageId, _chatId);
+					}
+					else if (model?.owned_by === 'ollama') {
+						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
 					}
 					else if (model) {
 						_response = await sendPromptOpenAI(model, prompt, responseMessageId, _chatId);
@@ -1681,14 +1682,18 @@
 
 			// Make the API call
 			const agentFilters = getAgentFilters();
+			const s3FileAgent = s3FileDummyAgentGenerator(__dirname + "/../data/expert_data/codegen/");
+			console.log(vanilla_agents);
 			const graphai = new GraphAI(
-					iterativeAnalysis,
-					{
-						...llm_agents,
-						codeGenerationTemplateAgent,
-						pythonCodeAgent,
-					},
-					{ agentFilters, config: { uid: "114520153332760575553"} }
+				 iterativeAnalysis,
+				 {
+					  ...llm_agents,
+					  ...vanilla_agents,
+					 s3FileAgent: agentInfoWrapper(s3FileAgent),
+					  codeGenerationTemplateAgent,
+					  pythonCodeAgent,
+				 },
+				 { agentFilters, config: { uid: "114520153332760575553"} }
 			)
 			const response = (await graphai.run(true)) as any;
 			console.log(JSON.stringify(response, null, 2));
