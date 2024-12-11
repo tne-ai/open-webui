@@ -16,7 +16,7 @@ export default defineConfig({
 		wasm(),
 		topLevelAwait(),
 		commonjs({
-			include: [/node_modules/, "@graphai/llm_agents"], // Process specific dependencies
+			include: [/node_modules/, "@graphai/llm_agents", "@graphai/vanilla"], // Process specific dependencies
 		}),
 	],
 	define: {
@@ -51,11 +51,13 @@ export default defineConfig({
 			allow: [
 				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/utils",
 				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/tests/data/graphai_flows",
+				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/agents/s3",
+				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/types",
 			],
 		},
 	},
 	optimizeDeps: {
-		include: ["@tne/tne-agent-v2", "@graphai/llm_agents"],
+		include: ["@tne/tne-agent-v2", "@graphai/llm_agents", "@graphai/vanilla"],
 		exclude: ["tiktoken"],
 		esbuildOptions: {
 		  plugins: [
