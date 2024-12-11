@@ -41,7 +41,8 @@ export default defineConfig({
 		port: 5174,
 		fs: {
 			allow: [
-				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/utils"
+				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/src/utils",
+				"/Users/lhahn1/ws/git/orion/extern/open-webui/tne-agent-v2/tests/data/graphai_flows"
 			]
 		}
 	},
