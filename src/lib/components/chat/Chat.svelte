@@ -14,15 +14,6 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-	import { GraphAI, agentInfoWrapper } from "graphai";
-	import { codeGenerationTemplateAgent, pythonCodeAgent } from '@tne/tne-agent-v2';
-	import { getAgentFilters } from '@tne/tne-agent-v2/src/utils/agentFilter';
-	import { iterativeAnalysis } from '@tne/tne-agent-v2/tests/data/graphai_flows/iterative_analysis';
-
-	import * as llm_agents from "@graphai/llm_agents";
-	import * as vanilla_agents from "@graphai/vanilla";
-	import { s3FileDummyAgentGenerator } from "@tne/tne-agent-v2/src/agents/s3/s3_file_dummy_agent";
-
 	import {
 		chatId,
 		chats,
@@ -92,7 +83,9 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 
+	const SERVER_URL = "http://localhost:8085/run-graph";
 	export let chatIdProp = '';
+
 
 	let loaded = false;
 	const eventTarget = new EventTarget();
@@ -1680,23 +1673,20 @@
 				})
 			);
 
-			// Make the API call
-			const agentFilters = getAgentFilters();
-			const s3FileAgent = s3FileDummyAgentGenerator(__dirname + "/../data/expert_data/codegen/");
-			console.log(vanilla_agents);
-			const graphai = new GraphAI(
-				 iterativeAnalysis,
-				 {
-					  ...llm_agents,
-					  ...vanilla_agents,
-					 s3FileAgent: agentInfoWrapper(s3FileAgent),
-					  codeGenerationTemplateAgent,
-					  pythonCodeAgent,
-				 },
-				 { agentFilters, config: { uid: "114520153332760575553"} }
-			)
-			const response = (await graphai.run(true)) as any;
-			console.log(JSON.stringify(response, null, 2));
+
+	    	const payload = {
+      			config: {
+        		uid: "114520153332760575553",
+				},
+    		};
+
+			const response = await fetch(SERVER_URL, {
+			  method: "POST",
+			  headers: {
+				"Content-Type": "application/json",
+			  },
+			  body: JSON.stringify(payload),
+			});
 
 			if (response.ok) {
 				const reader = response.body
