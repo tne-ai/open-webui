@@ -1,6 +1,0 @@
-agent: s3FileAgent
-params:
-  fileName: Hello.md
-passThrough:
-  nodeId: T1b0SjFtuXfcm65kxJnAk
-  nodeType: file

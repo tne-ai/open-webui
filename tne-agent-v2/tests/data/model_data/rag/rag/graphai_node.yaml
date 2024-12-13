@@ -1,7 +1,0 @@
-agent: "ragAgent"
-params:
-  ragDbName: "rag_v2_rich_papers"
-passThrough:
-  nodeType: rag
-  nodeId: 0fJTMuuy4b7dCFjK2qoH2
-isResult: true
