@@ -1852,6 +1852,7 @@
 			  body: JSON.stringify(payload),
 			});
 
+
 			if (response.ok) {
 				const reader = response.body
 					.pipeThrough(new TextDecoderStream())
@@ -1874,7 +1875,15 @@
 
 					try {
 						// Handle the streaming response
-						responseMessage.content += value;
+						// Define an interface to type the JSON
+						interface TextData { text: string;}
+
+						const jsonData: TextData = JSON.parse(value);
+						if (jsonData && jsonData.text) {
+							responseMessage.content += jsonData.text;
+						} else {
+							responseMessage.content += value;
+						}
 
 						// Update UI with new content
 						if (navigator.vibrate && ($settings?.hapticFeedback ?? false)) {
