@@ -1804,7 +1804,6 @@
 		const responseMessage = history.messages[responseMessageId];
 		const userMessage = history.messages[responseMessage.parentId];
 		await tick();
-		console.log(userMessage);
 
 		// Scroll down
 		scrollToBottom();
@@ -1840,8 +1839,13 @@
 			);
 
 
+			const graphWithUserMessage = JSON.parse(JSON.stringify(iterativeAnalysis));
+			graphWithUserMessage.nodes.userPrompt.value = userMessage.content;
+			console.log(graphWithUserMessage.nodes.userPrompt);
+			console.log(graphWithUserMessage);
+
 	    	const payload = {
-				graph: iterativeAnalysis
+				graphData: graphWithUserMessage
     		};
 
 			const response = await fetch(SERVER_URL, {
@@ -1874,13 +1878,27 @@
 					}
 
 					try {
-						// Handle the streaming response
-						// Define an interface to type the JSON
-						interface TextData { text: string;}
+						const jsonData = JSON.parse(value);
+						type ResponseObject = Record<string, any>; // General dynamic JSON type
 
-						const jsonData: TextData = JSON.parse(value);
-						if (jsonData && jsonData.text) {
-							responseMessage.content += jsonData.text;
+						// Recursive function to find the "text" attribute
+						function findTextAttribute(obj: ResponseObject): string | null {
+							for (const key in obj) {
+							   if (key === "text") {
+								 return obj[key]; // Return the value if "text" is found
+							   } else if (typeof obj[key] === "object" && obj[key] !== null) {
+								 // Recursively search nested objects or arrays
+								 const result = findTextAttribute(obj[key]);
+								 if (result) return result;
+							   }
+							}
+							return null; // Return null if "text" is not found
+						}
+
+						const text = findTextAttribute(jsonData);
+
+						if (text) {
+							responseMessage.content += text;
 						} else {
 							responseMessage.content += value;
 						}
