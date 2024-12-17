@@ -14,6 +14,8 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
+	import { iterativeAnalysis } from './Agents/iterative_analysis';
+
 	import {
 		chatId,
 		chats,
@@ -86,7 +88,7 @@
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
 
-	const SERVER_URL = "http://localhost:8085/run-graph";
+	const SERVER_URL = "http://localhost:8085/graph/run";
 	export let chatIdProp = '';
 
 	let loading = false;
@@ -1666,9 +1668,7 @@
 
 
 	    	const payload = {
-      			config: {
-        		uid: "114520153332760575553",
-				},
+				graph: iterativeAnalysis
     		};
 
 			const response = await fetch(SERVER_URL, {
