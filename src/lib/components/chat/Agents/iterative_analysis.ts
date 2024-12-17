@@ -2,7 +2,7 @@ export const iterativeAnalysis= {
   version: 0.5,
   nodes: {
     userPrompt: {
-      value: "What are the top 10 crossbody bags?",
+      value: "",
     },
     csvData: {
       agent: "s3FileAgent",
