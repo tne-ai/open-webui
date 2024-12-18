@@ -1841,8 +1841,6 @@
 
 			const graphWithUserMessage = JSON.parse(JSON.stringify(iterativeAnalysis));
 			graphWithUserMessage.nodes.userPrompt.value = userMessage.content;
-			console.log(graphWithUserMessage.nodes.userPrompt);
-			console.log(graphWithUserMessage);
 
 	    	const payload = {
 				graphData: graphWithUserMessage
@@ -1851,7 +1849,7 @@
 			const response = await fetch(SERVER_URL, {
 			  method: "POST",
 			  headers: {
-				"Content-Type": "application/json",
+				"Content-Type": "text/event-stream",
 			  },
 			  body: JSON.stringify(payload),
 			});
@@ -1865,7 +1863,7 @@
 
 				while (true) {
 					const { value, done } = await reader.read();
-					if (done || stopResponseFlag || _chatId !== $chatId) {
+					if (done || stopResponseFlag || _chatId !== $chatId || value.includes('__END__')) {
 						responseMessage.done = true;
 						history.messages[responseMessageId] = responseMessage;
 
@@ -1874,6 +1872,7 @@
 						}
 
 						_response = responseMessage.content;
+
 						break;
 					}
 
@@ -1884,7 +1883,7 @@
 						// Recursive function to find the "text" attribute
 						function findTextAttribute(obj: ResponseObject): string | null {
 							for (const key in obj) {
-							   if (key === "text") {
+							   if (key === "token") {
 								 return obj[key]; // Return the value if "text" is found
 							   } else if (typeof obj[key] === "object" && obj[key] !== null) {
 								 // Recursively search nested objects or arrays
@@ -1899,8 +1898,6 @@
 
 						if (text) {
 							responseMessage.content += text;
-						} else {
-							responseMessage.content += value;
 						}
 
 						// Update UI with new content
