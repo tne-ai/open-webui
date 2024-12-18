@@ -31,6 +31,9 @@ export const iterativeAnalysis= {
     },
     conversationLLM: {
       agent: "openAIAgent",
+      params: {
+        stream: true
+      },
       inputs: {
         prompt: ":userPrompt",
         system: "You are a helpful chat assistant with an expertise in DTC consumer fashion."
@@ -188,20 +191,18 @@ export const iterativeAnalysis= {
       inputs: {
         data: ":extractResults.item"
       },
-      console: {
-        after: true
-      }
     },
     summarizeDataToUser: {
       agent: "openAIAgent",
       params: {
         model: "gpt-4o",
         max_tokens: 4096,
+        stream: true
       },
       isResult: true,
       inputs: {
         prompt: ["[User query: ", ":userPrompt", "]", "[Answer: ", ":parsedResults", "]"],
-        system: "You are given a user query and an answer to that user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable."
+        system: "You are given a user query and an answer to that user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
       }
     }
   },
