@@ -4,6 +4,9 @@ export const iterativeAnalysis= {
     userPrompt: {
       value: "",
     },
+    chatHistory: {
+      value: []
+    },
     csvData: {
       agent: "s3FileAgent",
       params: {
@@ -21,7 +24,7 @@ export const iterativeAnalysis= {
     runCodeGen: {
       agent: "openAIAgent",
       inputs: {
-        prompt: ":userPrompt",
+        message: ":chatHistory",
         system: "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False."
       },
     },
@@ -35,8 +38,8 @@ export const iterativeAnalysis= {
         stream: true
       },
       inputs: {
-        prompt: ":userPrompt",
-        system: "You are a helpful chat assistant with an expertise in DTC consumer fashion."
+        system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
+        messages: ":chatHistory"
       },
       unless: ":checkInput",
       isResult: true
@@ -44,8 +47,9 @@ export const iterativeAnalysis= {
     promptDecomposer: {
       agent: "openAIAgent",
       inputs: {
-        prompt: [":userPrompt", ":csvData.text", ":businessRules.text"],
-        system: "You have been given a query related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step."
+        messages: ":chatHistory",
+        prompt: [":csvData.text", ":businessRules.text"],
+        system: "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step."
       },
       if: ":checkInput",
     },
@@ -55,6 +59,18 @@ export const iterativeAnalysis= {
         text: ":promptDecomposer.text.codeBlock()"
       },
       if: ":checkInput",
+    },
+    promptDecomposerSummary: {
+      agent: "openAIAgent",
+      params: {
+        stream: true,
+      },
+      inputs: {
+        system: "You are helpful summarizing agent. You'll receive a list of steps which are currently being computed by a complex AI system. Using this list, synthesize it into a plan of action and explain to the user what the system is doing in simple, clear terms (the user is a DTC fashion executive, not an engineer). Refer to the system in the first-person.",
+        prompt: ":promptDecomposer.text.codeBlock()",
+      },
+      if: ":checkInput",
+      isResult: true
     },
     codeGenerator: {
       agent: "nestedAgent",
@@ -201,8 +217,8 @@ export const iterativeAnalysis= {
       },
       isResult: true,
       inputs: {
-        prompt: ["[User query: ", ":userPrompt", "]", "[Answer: ", ":parsedResults", "]"],
-        system: "You are given a user query and an answer to that user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
+        prompt: ["[Answer: ", ":parsedResults", "]"],
+        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
       }
     }
   },

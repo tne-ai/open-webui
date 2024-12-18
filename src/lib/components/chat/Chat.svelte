@@ -135,6 +135,11 @@
 	let files = [];
 	let params = {};
 
+	interface Message {
+	  role: string;
+	  content: string;
+	}
+
 	$: if (chatIdProp) {
 		(async () => {
 			console.log(chatIdProp);
@@ -1674,12 +1679,14 @@
 				})
 			);
 
-
-			const graphWithUserMessage = JSON.parse(JSON.stringify(iterativeAnalysis));
-			graphWithUserMessage.nodes.userPrompt.value = userMessage.content;
+			// Add user prompt to the graph
+			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
+			graphData.nodes.userPrompt.value = userMessage.content;
+			graphData.nodes.chatHistory.value = messagesBody;
+			console.log(graphData);
 
 	    	const payload = {
-				graphData: graphWithUserMessage
+				graphData: graphData
     		};
 
 			const response = await fetch(SERVER_URL, {
@@ -1690,12 +1697,13 @@
 			  body: JSON.stringify(payload),
 			});
 
-
 			if (response.ok) {
 				const reader = response.body
 					.pipeThrough(new TextDecoderStream())
 					.pipeThrough(splitStream('\n'))
 					.getReader();
+
+				let lastNodeId = null;
 
 				while (true) {
 					const { value, done } = await reader.read();
@@ -1716,22 +1724,36 @@
 						const jsonData = JSON.parse(value);
 						type ResponseObject = Record<string, any>; // General dynamic JSON type
 
-						// Recursive function to find the "text" attribute
 						function findTextAttribute(obj: ResponseObject): string | null {
 							for (const key in obj) {
 							   if (key === "token") {
-								 return obj[key]; // Return the value if "text" is found
+								 return obj[key];
 							   } else if (typeof obj[key] === "object" && obj[key] !== null) {
-								 // Recursively search nested objects or arrays
 								 const result = findTextAttribute(obj[key]);
 								 if (result) return result;
 							   }
 							}
-							return null; // Return null if "text" is not found
+							return null;
 						}
+						  function findNodeIdAttribute(obj: ResponseObject): string | null {
+							   for (const key in obj) {
+								   if (key === "nodeId") {
+										return obj[key];
+								   } else if (typeof obj[key] === "object" && obj[key] !== null) {
+										const result = findNodeIdAttribute(obj[key]);
+										if (result) return result;
+								   }
+							   }
+							   return null;
+						  }
 
 						const text = findTextAttribute(jsonData);
+						const currNode = findNodeIdAttribute(jsonData);
 
+						if (currNode && currNode !== lastNodeId) {
+							 responseMessage.content += '\n\n';
+							 lastNodeId = currNode;
+						}
 						if (text) {
 							responseMessage.content += text;
 						}
