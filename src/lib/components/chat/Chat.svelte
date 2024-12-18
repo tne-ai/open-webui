@@ -83,7 +83,7 @@
 	import Placeholder from './Placeholder.svelte';
 	import { getTools } from '$lib/apis/tools';
 
-	const SERVER_URL = "http://localhost:8085/graph/run";
+	const GRAPHAI_SERVER_URL = "http://localhost:8085/graph/run";
 	export let chatIdProp = '';
 
 
@@ -130,11 +130,6 @@
 	let chatFiles = [];
 	let files = [];
 	let params = {};
-
-	interface Message {
-	  role: string;
-	  content: string;
-	}
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -1843,17 +1838,16 @@
 				})
 			);
 
-			// Add user prompt to the graph
+			// Add chat data to the graph
 			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
 			graphData.nodes.userPrompt.value = userMessage.content;
 			graphData.nodes.chatHistory.value = messagesBody;
-			console.log(graphData);
 
 	    	const payload = {
 				graphData: graphData
     		};
 
-			const response = await fetch(SERVER_URL, {
+			const response = await fetch(GRAPHAI_SERVER_URL, {
 			  method: "POST",
 			  headers: {
 				"Content-Type": "text/event-stream",
