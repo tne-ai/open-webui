@@ -746,6 +746,12 @@
 														regenerateButton?.click();
 													}
 
+													// Check for GraphAI process
+													if (prompt === '' && e.key == '\:') {
+														// Generate a chip
+														console.log("GraphAI process");
+													}
+
 													if (prompt === '' && e.key == 'ArrowUp') {
 														e.preventDefault();
 
