@@ -1854,7 +1854,7 @@
         history.messages[responseMessageId] = responseMessage.content
       };
       const streamAgentFilter = streamAgentFilterGenerator<string>(outSideFunciton);
-      const serverAgents = ["pythonCodeAgent","s3FileAgent"];
+      const serverAgents = ["pythonCodeAgent","s3FileAgent", "codeGenerationTemplateAgent", "pythonCodeAgent"];
       const agentFilters = [
         {
           name: "streamAgentFilter",
