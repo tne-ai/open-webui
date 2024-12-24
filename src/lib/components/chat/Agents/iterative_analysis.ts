@@ -11,14 +11,28 @@ export const iterativeAnalysis= {
       agent: "s3FileAgent",
       params: {
         fileName: "retail_highlight_shopping_list_no_periods.csv",
+        bucket: "bp-authoring-files",
+        region: "us-west-2",
+        credentials: {
+          accessKeyId: import.meta.env.VITE_AWS_KEY,
+          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        },
       },
+      // console: {after: true},
       inputs: {},
     },
     businessRules: {
       agent: "s3FileAgent",
       params: {
-        fileName: "model-friendly rules 2024-08-19.txt"
+        fileName: "model-friendly rules 2024-08-19.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2",
+        credentials: {
+          accessKeyId: import.meta.env.VITE_AWS_KEY,
+          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        },
       },
+      // console: {after: true},
       inputs: {},
     },
     runCodeGen: {

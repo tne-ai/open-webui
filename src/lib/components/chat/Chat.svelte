@@ -86,6 +86,7 @@
   import { GraphAI } from "graphai";
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
+  import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/s3/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
 	const GRAPHAI_SERVER_URL = "http://localhost:8085/graph/run";
@@ -1844,8 +1845,8 @@
 			);
 
 			// Add chat data to the graph
-			// const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
-			const graphData = JSON.parse(JSON.stringify(graphChat));
+			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
+			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
       const outSideFunciton = (context: AgentFunctionContext, token: string) => {
         // const { nodeId } = context.debugInfo;
@@ -1854,7 +1855,7 @@
         history.messages[responseMessageId] = responseMessage.content
       };
       const streamAgentFilter = streamAgentFilterGenerator<string>(outSideFunciton);
-      const serverAgents = ["pythonCodeAgent","s3FileAgent", "codeGenerationTemplateAgent", "pythonCodeAgent"];
+      const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent", "pythonCodeAgent"];
       const agentFilters = [
         {
           name: "streamAgentFilter",
@@ -1870,8 +1871,11 @@
           },
           agentIds: serverAgents,
         }];
-      
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent}, {agentFilters, bypassAgentIds: serverAgents});
+      const config = {
+        uid: "114520153332760575553",
+        python_runner_server: "http://0.0.0.0:8080/"
+      };
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
 			graphai.injectValue("userPrompt", userMessage.content);
 			graphai.injectValue("chatHistory", messagesBody);
       
