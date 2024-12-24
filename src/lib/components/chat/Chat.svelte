@@ -1879,11 +1879,17 @@
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
 			graphai.injectValue("userPrompt", userMessage.content);
 			graphai.injectValue("chatHistory", messagesBody);
-      
+      graphai.onLogCallback = ({ nodeId, state, inputs, result, errorMessage }) => {
+        if (result) {
+          console.log(`${nodeId} ${state} ${JSON.stringify(result)}`);
+        } else {
+          console.log(`${nodeId} ${state}`);
+        }
+      };
       const graphaResponse = await graphai.run();
       console.log(graphaResponse);
-      responseMessage.content = graphaResponse["llm"]["text"];
-      history.messages[responseMessageId] = graphaResponse["llm"]["text"];
+      // responseMessage.content = graphaResponse["llm"]["text"];
+      // history.messages[responseMessageId] = graphaResponse["llm"]["text"];
 /*
 			const response = await fetch(GRAPHAI_SERVER_URL, {
 			  method: "POST",

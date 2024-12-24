@@ -18,7 +18,7 @@ export const iterativeAnalysis= {
           secretAccessKey: import.meta.env.VITE_AWS_SECRET,
         },
       },
-      // console: {after: true},
+      console: {after: true},
       inputs: {},
     },
     businessRules: {
@@ -32,7 +32,7 @@ export const iterativeAnalysis= {
           secretAccessKey: import.meta.env.VITE_AWS_SECRET,
         },
       },
-      // console: {after: true},
+      console: {after: true},
       inputs: {},
     },
     runCodeGen: {
@@ -45,6 +45,7 @@ export const iterativeAnalysis= {
         message: ":chatHistory",
         system: "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False."
       },
+      console: true,
     },
     checkInput: {
       agent: "compareAgent",
@@ -226,6 +227,7 @@ export const iterativeAnalysis= {
     },
     extractResults: {
       agent: "popAgent",
+      console: { before: true},
       inputs: {
         array: ":codeGenerator.results"
       }
