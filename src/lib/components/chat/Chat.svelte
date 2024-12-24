@@ -87,6 +87,7 @@
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
   import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/s3/browser";
+  import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
 	const GRAPHAI_SERVER_URL = "http://localhost:8085/graph/run";
@@ -1876,14 +1877,15 @@
         uid: "114520153332760575553",
         python_runner_server: "http://0.0.0.0:8080/"
       };
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+      console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
 			graphai.injectValue("userPrompt", userMessage.content);
 			graphai.injectValue("chatHistory", messagesBody);
-      graphai.onLogCallback = ({ nodeId, state, inputs, result, errorMessage }) => {
+      graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
-          console.log(`${nodeId} ${state} ${JSON.stringify(result)}`);
+          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
-          console.log(`${nodeId} ${state}`);
+          console.log(`${nodeId} ${agentId} ${state}`);
         }
       };
       const graphaResponse = await graphai.run();
