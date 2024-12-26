@@ -13,10 +13,6 @@ export const iterativeAnalysis= {
         fileName: "retail_highlight_shopping_list_no_periods.csv",
         bucket: "bp-authoring-files",
         region: "us-west-2",
-        credentials: {
-          accessKeyId: import.meta.env.VITE_AWS_KEY,
-          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
-        },
       },
       console: {after: true},
       inputs: {},
@@ -27,10 +23,6 @@ export const iterativeAnalysis= {
         fileName: "model-friendly rules 2024-08-19.txt",
         bucket: "bp-authoring-files",
         region: "us-west-2",
-        credentials: {
-          accessKeyId: import.meta.env.VITE_AWS_KEY,
-          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
-        },
       },
       console: {after: true},
       inputs: {},
@@ -149,10 +141,6 @@ export const iterativeAnalysis= {
               prompt: "Return the results as a pd.DataFrame. Unless your instructions are to load the dataframe from S3, access the dataframe using a variable `PROCESS_INPUT`, which is a dataframe serialized into a list object. Use pd.DataFrame(PROCESS_INPUT) to access the dataframe. You MUST convert all timestamps to string, as they are not JSON-serializable. Pandas series are also not serializable; avoid these." ,
               bucket: "bp-authoring-files",
               region: "us-west-2",
-              credentials: {
-                accessKeyId: import.meta.env.VITE_AWS_KEY,
-                secretAccessKey: import.meta.env.VITE_AWS_SECRET,
-              },
             },
             inputs: {
               file: ":file",

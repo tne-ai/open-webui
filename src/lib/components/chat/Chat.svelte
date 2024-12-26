@@ -1875,7 +1875,11 @@
         }];
       const config = {
         uid: "114520153332760575553",
-        python_runner_server: "http://0.0.0.0:8080/"
+        python_runner_server: "http://0.0.0.0:8080/",
+        credentials: {
+          accessKeyId: import.meta.env.VITE_AWS_KEY,
+          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        },
       };
       console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
