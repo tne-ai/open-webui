@@ -74,7 +74,7 @@
 		"@tiptap/extension-typography": "^2.10.0",
 		"@tiptap/pm": "^2.10.0",
 		"@tiptap/starter-kit": "^2.10.0",
-		"@tne/tne-agent-v2": "file:packages/tne-tne-agent-v2-0.0.1.c.tgz",
+		"@tne/tne-agent-v2": "file:packages/tne-tne-agent-v2-0.0.1.g.tgz",
 		"@xyflow/svelte": "^0.1.19",
 		"async": "^3.2.5",
 		"bits-ui": "^0.19.7",
