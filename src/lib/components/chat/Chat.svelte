@@ -14,7 +14,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-	import { iterativeAnalysis } from './Agents/iterative_analysis';
+  import { iterativeAnalysis, graphChat } from './Agents/iterative_analysis';
 
 	import {
 		chatId,
@@ -82,6 +82,13 @@
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
 	import Placeholder from './Placeholder.svelte';
 	import { getTools } from '$lib/apis/tools';
+
+  import { GraphAI } from "graphai";
+  import * as agents from "@graphai/vanilla";
+  import { openAIAgent } from "@graphai/openai_agent";
+  import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
+  import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
+  import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
 	const GRAPHAI_SERVER_URL = "http://localhost:8085/graph/run";
 	export let chatIdProp = '';
@@ -1840,13 +1847,81 @@
 
 			// Add chat data to the graph
 			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
-			graphData.nodes.userPrompt.value = userMessage.content;
-			graphData.nodes.chatHistory.value = messagesBody;
+			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
-	    	const payload = {
-				graphData: graphData
-    		};
+      const outSideFunciton = (context: AgentFunctionContext, token: string) => {
+        // const { nodeId } = context.debugInfo;
+        responseMessage.content = (responseMessage.content ?? "") + token
 
+        
+				const messageContentParts = getMessageContentParts(
+					responseMessage.content,
+					$config?.audio?.tts?.split_on ?? 'punctuation'
+				);
+				messageContentParts.pop();
+
+				// Dispatch event for new content
+				if (
+					messageContentParts.length > 0 &&
+						messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
+				) {
+					responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
+					eventTarget.dispatchEvent(
+						new CustomEvent('chat', {
+							detail: {
+								id: responseMessageId,
+								content: messageContentParts[messageContentParts.length - 1]
+							}
+						})
+					);
+				}
+				history.messages[responseMessageId] = responseMessage;
+        // history.messages[responseMessageId] = responseMessage.content
+      };
+      const streamAgentFilter = streamAgentFilterGenerator<string>(outSideFunciton);
+      // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
+      const serverAgents = [];
+      const agentFilters = [
+        {
+          name: "streamAgentFilter",
+          agent: streamAgentFilter,
+        },
+        {
+          name: "httpAgentFilter",
+          agent: httpAgentFilter,
+          filterParams: {
+            server: {
+              baseUrl: "http://localhost:8085/agents",
+            },
+          },
+          agentIds: serverAgents,
+        }];
+      const config = {
+        uid: "114520153332760575553",
+        python_runner_server: "http://0.0.0.0:8080/",
+        credentials: {
+          accessKeyId: import.meta.env.VITE_AWS_KEY,
+          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        },
+      };
+      console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+			graphai.injectValue("userPrompt", userMessage.content);
+			graphai.injectValue("chatHistory", messagesBody);
+      graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
+        if (result) {
+          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
+        } else {
+          console.log(`${nodeId} ${agentId} ${state}`);
+        }
+      };
+      const graphaResponse = await graphai.run();
+      console.log(graphaResponse);
+      // responseMessage.content = graphaResponse["llm"]["text"];
+      // history.messages[responseMessageId] = graphaResponse["llm"]["text"];
+
+      responseMessage.done = true
+      /*
 			const response = await fetch(GRAPHAI_SERVER_URL, {
 			  method: "POST",
 			  headers: {
@@ -1955,7 +2030,8 @@
 				}
 			} else {
 				throw new Error(`API request failed: ${response.statusText}`);
-			}
+		  }
+      */
 		} catch (error) {
 			console.error('Error:', error);
 			responseMessage.error = {
@@ -1965,7 +2041,7 @@
 			};
 			responseMessage.done = true;
 		}
-
+    
 		// Save the chat
 		await saveChatHandler(_chatId);
 		history.messages[responseMessageId] = responseMessage;
