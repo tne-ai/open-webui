@@ -1851,9 +1851,32 @@
 
       const outSideFunciton = (context: AgentFunctionContext, token: string) => {
         // const { nodeId } = context.debugInfo;
-        // TODO: some streaming process
         responseMessage.content = (responseMessage.content ?? "") + token
-        history.messages[responseMessageId] = responseMessage.content
+
+        
+				const messageContentParts = getMessageContentParts(
+					responseMessage.content,
+					$config?.audio?.tts?.split_on ?? 'punctuation'
+				);
+				messageContentParts.pop();
+
+				// Dispatch event for new content
+				if (
+					messageContentParts.length > 0 &&
+						messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
+				) {
+					responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
+					eventTarget.dispatchEvent(
+						new CustomEvent('chat', {
+							detail: {
+								id: responseMessageId,
+								content: messageContentParts[messageContentParts.length - 1]
+							}
+						})
+					);
+				}
+				history.messages[responseMessageId] = responseMessage;
+        // history.messages[responseMessageId] = responseMessage.content
       };
       const streamAgentFilter = streamAgentFilterGenerator<string>(outSideFunciton);
       // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
