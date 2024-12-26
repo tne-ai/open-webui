@@ -86,7 +86,7 @@
   import { GraphAI } from "graphai";
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
-  import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/s3/browser";
+  import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
@@ -1892,7 +1892,9 @@
       console.log(graphaResponse);
       // responseMessage.content = graphaResponse["llm"]["text"];
       // history.messages[responseMessageId] = graphaResponse["llm"]["text"];
-/*
+
+      responseMessage.done = true
+      /*
 			const response = await fetch(GRAPHAI_SERVER_URL, {
 			  method: "POST",
 			  headers: {

@@ -109,7 +109,7 @@ export const iterativeAnalysis= {
         },
         nodes: {
           workflowSteps: {
-            value: [],
+            // from inputs
             update: ":shift.array"
           },
           results: {
@@ -122,12 +122,14 @@ export const iterativeAnalysis= {
             inputs: {
               array: ":workflowSteps"
             },
+            console: true,
           },
           computedData: {
             agent: "popAgent",
             inputs: {
               array: ":results"
             },
+            console: true,
           },
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
