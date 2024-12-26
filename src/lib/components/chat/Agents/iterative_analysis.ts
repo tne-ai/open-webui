@@ -11,22 +11,33 @@ export const iterativeAnalysis= {
       agent: "s3FileAgent",
       params: {
         fileName: "retail_highlight_shopping_list_no_periods.csv",
+        bucket: "bp-authoring-files",
+        region: "us-west-2",
       },
+      console: {after: true},
       inputs: {},
     },
     businessRules: {
       agent: "s3FileAgent",
       params: {
-        fileName: "model-friendly rules 2024-08-19.txt"
+        fileName: "model-friendly rules 2024-08-19.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2",
       },
+      console: {after: true},
       inputs: {},
     },
     runCodeGen: {
       agent: "openAIAgent",
+      params: {
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
+      },
       inputs: {
         messages: ":chatHistory",
         system: [":businessRules.text", "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
       },
+      console: true,
     },
     checkInput: {
       agent: "compareAgent",
@@ -35,7 +46,9 @@ export const iterativeAnalysis= {
     conversationLLM: {
       agent: "openAIAgent",
       params: {
-        stream: true
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
+        stream: true,
       },
       inputs: {
         system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
@@ -51,6 +64,10 @@ export const iterativeAnalysis= {
         prompt: [":csvData.text", ":businessRules.text"],
         system: "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step."
       },
+      params: {
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
+      },
       if: ":checkInput",
     },
     promptDecomposerJson: {
@@ -63,6 +80,8 @@ export const iterativeAnalysis= {
     promptDecomposerSummary: {
       agent: "openAIAgent",
       params: {
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
         stream: true,
       },
       inputs: {
@@ -75,6 +94,11 @@ export const iterativeAnalysis= {
     codeGenerator: {
       agent: "nestedAgent",
       if: ":checkInput",
+      inputs: {
+        file: [":csvData"],
+        inputs: [],
+        workflowSteps: ":promptDecomposerJson"
+      },
       graph: {
         version: 0.5,
         loop: {
@@ -82,7 +106,7 @@ export const iterativeAnalysis= {
         },
         nodes: {
           workflowSteps: {
-            value: [],
+            // from inputs
             update: ":shift.array"
           },
           results: {
@@ -95,17 +119,28 @@ export const iterativeAnalysis= {
             inputs: {
               array: ":workflowSteps"
             },
+            console: true,
           },
+          computedData: {
+            value: {
+              item: []
+            },
+          },
+          /*
           computedData: {
             agent: "popAgent",
             inputs: {
               array: ":results"
             },
-          },
+            console: true,
+            },
+          */
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
             params: {
               prompt: "Return the results as a pd.DataFrame. Unless your instructions are to load the dataframe from S3, access the dataframe using a variable `PROCESS_INPUT`, which is a dataframe serialized into a list object. Use pd.DataFrame(PROCESS_INPUT) to access the dataframe. You MUST convert all timestamps to string, as they are not JSON-serializable. Pandas series are also not serializable; avoid these." ,
+              bucket: "bp-authoring-files",
+              region: "us-west-2",
             },
             inputs: {
               file: ":file",
@@ -115,6 +150,11 @@ export const iterativeAnalysis= {
           },
           codeGeneratorSubroutine: {
             agent: "nestedAgent",
+            inputs: {
+              prompt: ":codeGenerator_inputFiles.prompt",
+              codeGenerator_inputFiles: ":codeGenerator_inputFiles",
+              computedData: ":computedData"
+            },
             graph: {
               version: 0.5,
               loop: {
@@ -132,6 +172,8 @@ export const iterativeAnalysis= {
                 writeCode: {
                   agent: "openAIAgent",
                   params: {
+                    forWeb: true,
+                    apiKey: import.meta.env.VITE_OPEN_API_KEY,
                     model: "gpt-4o",
                     max_tokens: 4096,
                   },
@@ -151,7 +193,7 @@ export const iterativeAnalysis= {
                   },
                   isResult: true
                 },
-                catchError: {
+                 catchError: {
                   agent: "compareAgent",
                   if: ":executeCode.onError",
                   inputs: {
@@ -175,11 +217,6 @@ export const iterativeAnalysis= {
                 }
               }
             },
-            inputs: {
-              prompt: ":codeGenerator_inputFiles.prompt",
-              codeGenerator_inputFiles: ":codeGenerator_inputFiles",
-              computedData: ":computedData"
-            }
           },
           reducer: {
             agent: "pushAgent",
@@ -190,14 +227,10 @@ export const iterativeAnalysis= {
           }
         }
       },
-      inputs: {
-        file: [":csvData"],
-        inputs: [],
-        workflowSteps: ":promptDecomposerJson"
-      }
     },
     extractResults: {
       agent: "popAgent",
+      console: { before: true},
       inputs: {
         array: ":codeGenerator.results"
       }
@@ -211,6 +244,8 @@ export const iterativeAnalysis= {
     summarizeDataToUser: {
       agent: "openAIAgent",
       params: {
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
         model: "gpt-4o",
         max_tokens: 4096,
         stream: true
@@ -222,5 +257,51 @@ export const iterativeAnalysis= {
         system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
       }
     }
+  },
+};
+
+
+export const graphChat = {
+  version: 0.5,
+  //loop: {
+  //while: ":continue",
+  //},
+  nodes: {
+    continue: {
+      value: true,
+      update: ":checkInput",
+    },
+    chatHistory: {
+      value: [],
+      update: ":reducer.array",
+    },
+    userPrompt: {
+      value: "hello",
+    },
+    checkInput: {
+      // Checks if the user wants to terminate the chat or not.
+      agent: "compareAgent",
+      inputs: { array: [":userPrompt", "!=", "/bye"] },
+    },
+    llm: {
+      agent: "openAIAgent",
+      isResult: true,
+      params: {
+        forWeb: true,
+        apiKey: import.meta.env.VITE_OPEN_API_KEY,
+        stream: true,
+      },
+      inputs: { messages: ":chatHistory", prompt: ":userPrompt.text" },
+    },
+    output: {
+      agent: "stringTemplateAgent",
+      inputs: {
+        text: "\x1b[32mAgent\x1b[0m: ${:llm.text}",
+      },
+    },
+    reducer: {
+      agent: "pushAgent",
+      inputs: { array: ":chatHistory", items: [":userPrompt.message", { content: ":llm.text", role: "assistant" }] },
+    },
   },
 };
