@@ -24,8 +24,8 @@ export const iterativeAnalysis= {
     runCodeGen: {
       agent: "openAIAgent",
       inputs: {
-        message: ":chatHistory",
-        system: "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False."
+        messages: ":chatHistory",
+        system: [":businessRules.text", "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
       },
     },
     checkInput: {
@@ -217,6 +217,7 @@ export const iterativeAnalysis= {
       },
       isResult: true,
       inputs: {
+        messages: ":chatHistory",
         prompt: ["[Answer: ", ":parsedResults", "]"],
         system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
       }
