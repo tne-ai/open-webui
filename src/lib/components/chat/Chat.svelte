@@ -1655,36 +1655,37 @@
 			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
 			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
-      const outSideFunciton = (context: AgentFunctionContext, token: string) => {
-        // const { nodeId } = context.debugInfo;
-        responseMessage.content = (responseMessage.content ?? "") + token
-
-        
-				const messageContentParts = getMessageContentParts(
-					responseMessage.content,
-					$config?.audio?.tts?.split_on ?? 'punctuation'
-				);
-				messageContentParts.pop();
-
-				// Dispatch event for new content
-				if (
-					messageContentParts.length > 0 &&
-						messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
-				) {
-					responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
-					eventTarget.dispatchEvent(
-						new CustomEvent('chat', {
-							detail: {
-								id: responseMessageId,
-								content: messageContentParts[messageContentParts.length - 1]
-							}
-						})
-					);
-				}
-				history.messages[responseMessageId] = responseMessage;
-        // history.messages[responseMessageId] = responseMessage.content
+	  let lastNodeId: string | null = null;
+      const outsideFunction = (context: AgentFunctionContext, token: string) => {
+	    if (context.debugInfo.nodeId !== lastNodeId && lastNodeId !== null) {
+			console.log("HI THERE");
+			responseMessage.content = (responseMessage.content ?? "") + "\n\n" + token;
+		} else {
+			responseMessage.content = (responseMessage.content ?? "") + token;
+		}
+		lastNodeId = context.debugInfo.nodeId;
+	    const messageContentParts = getMessageContentParts(
+			responseMessage.content,
+			$config?.audio?.tts?.split_on ?? 'punctuation'
+		);
+	    messageContentParts.pop();
+	    if (
+			messageContentParts.length > 0 &&
+			messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
+	  	) {
+		   responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
+		   eventTarget.dispatchEvent(
+				new CustomEvent('chat', {
+					  detail: {
+						  id: responseMessageId,
+						  content: messageContentParts[messageContentParts.length - 1]
+					  }
+				})
+		   );
+	  	}
+	    history.messages[responseMessageId] = responseMessage;
       };
-      const streamAgentFilter = streamAgentFilterGenerator<string>(outSideFunciton);
+      const streamAgentFilter = streamAgentFilterGenerator<string>(outsideFunction);
       // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
       const serverAgents = [];
       const agentFilters = [
@@ -1704,7 +1705,7 @@
         }];
       const config = {
         uid: "114520153332760575553",
-        python_runner_server: "http://0.0.0.0:8080/",
+        python_runner_server: "http://0.0.0.0:8080",
         credentials: {
           accessKeyId: import.meta.env.VITE_AWS_KEY,
           secretAccessKey: import.meta.env.VITE_AWS_SECRET,
@@ -1712,17 +1713,17 @@
       };
       console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-			graphai.injectValue("userPrompt", userMessage.content);
-			graphai.injectValue("chatHistory", messagesBody);
+	  graphai.injectValue("userPrompt", userMessage.content);
+	  graphai.injectValue("chatHistory", messagesBody);
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
-          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
+          // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
-          console.log(`${nodeId} ${agentId} ${state}`);
+          // console.log(`${nodeId} ${agentId} ${state}`);
         }
       };
-      const graphaResponse = await graphai.run();
-      console.log(graphaResponse);
+      await graphai.run();
+      // console.log(graphaiResponse);
       // responseMessage.content = graphaResponse["llm"]["text"];
       // history.messages[responseMessageId] = graphaResponse["llm"]["text"];
 
