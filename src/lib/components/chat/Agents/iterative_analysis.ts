@@ -35,7 +35,7 @@ export const iterativeAnalysis= {
       },
       inputs: {
         messages: ":chatHistory",
-        system: [":businessRules.text", "You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
+        system: ["You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
       },
       console: true,
     },
@@ -106,7 +106,7 @@ export const iterativeAnalysis= {
         },
         nodes: {
           workflowSteps: {
-            // from inputs
+            value: [],
             update: ":shift.array"
           },
           results: {
@@ -122,19 +122,12 @@ export const iterativeAnalysis= {
             console: true,
           },
           computedData: {
-            value: {
-              item: []
-            },
-          },
-          /*
-          computedData: {
             agent: "popAgent",
             inputs: {
               array: ":results"
             },
             console: true,
-            },
-          */
+          },
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
             params: {
