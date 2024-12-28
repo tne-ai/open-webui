@@ -7,6 +7,9 @@ export const iterativeAnalysis= {
     chatHistory: {
       value: []
     },
+    llmEngine: {
+      value: "",
+    },
     csvData: {
       agent: "s3FileAgent",
       params: {
@@ -28,7 +31,7 @@ export const iterativeAnalysis= {
       inputs: {},
     },
     runCodeGen: {
-      agent: "openAIAgent",
+      agent: ":llmEngine",
       params: {
         forWeb: true,
         apiKey: import.meta.env.VITE_OPEN_API_KEY,
@@ -44,7 +47,7 @@ export const iterativeAnalysis= {
       inputs: { array: [":runCodeGen.text", "!=", "False"] },
     },
     conversationLLM: {
-      agent: "openAIAgent",
+      agent: ":llmEngine",
       params: {
         forWeb: true,
         apiKey: import.meta.env.VITE_OPEN_API_KEY,
@@ -58,7 +61,7 @@ export const iterativeAnalysis= {
       isResult: true
     },
     promptDecomposer: {
-      agent: "openAIAgent",
+      agent: ":llmEngine",
       inputs: {
         messages: ":chatHistory",
         prompt: [":csvData.text", ":businessRules.text"],
@@ -78,7 +81,7 @@ export const iterativeAnalysis= {
       if: ":checkInput",
     },
     promptDecomposerSummary: {
-      agent: "openAIAgent",
+      agent: ":llmEngine",
       params: {
         forWeb: true,
         apiKey: import.meta.env.VITE_OPEN_API_KEY,
@@ -97,7 +100,8 @@ export const iterativeAnalysis= {
       inputs: {
         file: [":csvData"],
         inputs: [],
-        workflowSteps: ":promptDecomposerJson"
+        workflowSteps: ":promptDecomposerJson",
+        llmEngine: ":llmEngine"
       },
       graph: {
         version: 0.5,
@@ -146,7 +150,8 @@ export const iterativeAnalysis= {
             inputs: {
               prompt: ":codeGenerator_inputFiles.prompt",
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
-              computedData: ":computedData"
+              computedData: ":computedData",
+              llmEngine: ":llmEngine",
             },
             graph: {
               version: 0.5,
@@ -163,7 +168,7 @@ export const iterativeAnalysis= {
                   update: ":addErrorToPrompt"
                 },
                 writeCode: {
-                  agent: "openAIAgent",
+                  agent: ":llmEngine",
                   params: {
                     forWeb: true,
                     apiKey: import.meta.env.VITE_OPEN_API_KEY,
@@ -235,7 +240,7 @@ export const iterativeAnalysis= {
       },
     },
     summarizeDataToUser: {
-      agent: "openAIAgent",
+      agent: ":llmEngine",
       params: {
         forWeb: true,
         apiKey: import.meta.env.VITE_OPEN_API_KEY,

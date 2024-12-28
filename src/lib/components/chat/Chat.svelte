@@ -1071,7 +1071,7 @@
 						_response = await sendPromptBP_RUNNER(model, prompt, responseMessageId, _chatId);
 					}
 					else if (model?.id.includes('graphai')) {
-						_response = await sendPromptGraphAI(model, prompt, responseMessageId, _chatId);
+						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
 					}
 					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
@@ -1805,7 +1805,7 @@
 		return _response;
 	};
 
-	const sendPromptGraphAI = async (model, userPrompt, responseMessageId, _chatId) => {
+  const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
 
 		const responseMessage = history.messages[responseMessageId];
@@ -1909,6 +1909,7 @@
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
 	  graphai.injectValue("userPrompt", userMessage.content);
 	  graphai.injectValue("chatHistory", messagesBody);
+	  graphai.injectValue("llmEngine", llmEngine);
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
           // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
