@@ -1897,12 +1897,22 @@
           },
           agentIds: serverAgents,
         }];
+      const s3Credentials = {
+        accessKeyId: import.meta.env.VITE_AWS_KEY,
+        secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+      };
+
       const config = {
-        uid: "114520153332760575553",
-        python_runner_server: "http://0.0.0.0:8080",
-        credentials: {
-          accessKeyId: import.meta.env.VITE_AWS_KEY,
-          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        global: {
+          uid: "114520153332760575553",
+        },
+        pythonCodeAgent: { python_runner_server: "http://0.0.0.0:8080" },
+        s3FileAgent: { credentials: s3Credentials },
+        codeGenerationTemplateAgent: { credentials: s3Credentials },
+        openAIAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_OPEN_API_KEY,
+          stream: true,
         },
       };
       console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})

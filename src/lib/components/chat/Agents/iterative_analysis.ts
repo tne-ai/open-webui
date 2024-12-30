@@ -29,10 +29,6 @@ export const iterativeAnalysis= {
     },
     runCodeGen: {
       agent: "openAIAgent",
-      params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
-      },
       inputs: {
         messages: ":chatHistory",
         system: ["You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
@@ -45,11 +41,6 @@ export const iterativeAnalysis= {
     },
     conversationLLM: {
       agent: "openAIAgent",
-      params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
-        stream: true,
-      },
       inputs: {
         system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
         messages: ":chatHistory"
@@ -64,10 +55,6 @@ export const iterativeAnalysis= {
         prompt: [":csvData.text", ":businessRules.text"],
         system: "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step."
       },
-      params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
-      },
       if: ":checkInput",
     },
     promptDecomposerJson: {
@@ -79,11 +66,6 @@ export const iterativeAnalysis= {
     },
     promptDecomposerSummary: {
       agent: "openAIAgent",
-      params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
-        stream: true,
-      },
       inputs: {
         system: "You are helpful summarizing agent. You'll receive a list of steps which are currently being computed by a complex AI system. Using this list, synthesize it into a plan of action and explain to the user what the system is doing in simple, clear terms (the user is a DTC fashion executive, not an engineer). Refer to the system in the first-person.",
         prompt: ":promptDecomposer.text.codeBlock()",
@@ -165,8 +147,6 @@ export const iterativeAnalysis= {
                 writeCode: {
                   agent: "openAIAgent",
                   params: {
-                    forWeb: true,
-                    apiKey: import.meta.env.VITE_OPEN_API_KEY,
                     model: "gpt-4o",
                     max_tokens: 4096,
                   },
@@ -237,11 +217,8 @@ export const iterativeAnalysis= {
     summarizeDataToUser: {
       agent: "openAIAgent",
       params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
         model: "gpt-4o",
         max_tokens: 4096,
-        stream: true
       },
       isResult: true,
       inputs: {
@@ -279,11 +256,6 @@ export const graphChat = {
     llm: {
       agent: "openAIAgent",
       isResult: true,
-      params: {
-        forWeb: true,
-        apiKey: import.meta.env.VITE_OPEN_API_KEY,
-        stream: true,
-      },
       inputs: { messages: ":chatHistory", prompt: ":userPrompt.text" },
     },
     output: {
