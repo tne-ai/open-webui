@@ -86,6 +86,7 @@
   import { GraphAI } from "graphai";
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
+  import { anthropicAgent } from "@graphai/anthropic_agent";
   import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
@@ -1073,6 +1074,9 @@
 					else if (model?.id.includes('graphai')) {
 						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
 					}
+					else if (model?.id.includes('anthropic')) {
+						_response = await sendPromptGraphAI(model, "anthropicAgent", prompt, responseMessageId, _chatId);
+					}
 					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
 					} 
@@ -1914,12 +1918,21 @@
           apiKey: import.meta.env.VITE_OPEN_API_KEY,
           stream: true,
         },
+        anthropicAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+          stream: true,
+        },
       };
-      console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-	  graphai.injectValue("userPrompt", userMessage.content);
-	  graphai.injectValue("chatHistory", messagesBody);
-	  graphai.injectValue("llmEngine", llmEngine);
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+	    graphai.injectValue("userPrompt", userMessage.content);
+      const messages = (messagesBody ?? []).map(message => {
+        const { role, content } = message;
+        return { role, content };
+      });
+	    graphai.injectValue("chatHistory", messages);
+	    graphai.injectValue("llmEngine", llmEngine);
+	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
           // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
