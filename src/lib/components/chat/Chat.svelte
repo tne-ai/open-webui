@@ -87,6 +87,7 @@
   import { GraphAI } from "graphai";
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
+  import { anthropicAgent } from "@graphai/anthropic_agent";
   import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
@@ -1438,7 +1439,10 @@
 					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
 					else if (model?.id.includes('graphai')) {
-						_response = await sendPromptGraphAI(model, prompt, responseMessageId, _chatId);
+						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
+					}
+					else if (model?.id.includes('anthropic')) {
+						_response = await sendPromptGraphAI(model, "anthropicAgent", prompt, responseMessageId, _chatId);
 					}
 					else if (model?.owned_by === 'ollama') {
 						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
@@ -1611,7 +1615,7 @@
 		scrollToBottom();
 	};
 
-	const sendPromptGraphAI = async (model, userPrompt, responseMessageId, _chatId) => {
+  const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
 
 		const responseMessage = history.messages[responseMessageId];
@@ -1703,18 +1707,38 @@
           },
           agentIds: serverAgents,
         }];
+      const s3Credentials = {
+        accessKeyId: import.meta.env.VITE_AWS_KEY,
+        secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+      };
+
       const config = {
-        uid: "114520153332760575553",
-        python_runner_server: "http://0.0.0.0:8080",
-        credentials: {
-          accessKeyId: import.meta.env.VITE_AWS_KEY,
-          secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+        global: {
+          uid: "114520153332760575553",
+        },
+        pythonCodeAgent: { python_runner_server: "http://0.0.0.0:8080" },
+        s3FileAgent: { credentials: s3Credentials },
+        codeGenerationTemplateAgent: { credentials: s3Credentials },
+        openAIAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_OPEN_API_KEY,
+          stream: true,
+        },
+        anthropicAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+          stream: true,
         },
       };
-      console.log({  s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent})
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-	  graphai.injectValue("userPrompt", userMessage.content);
-	  graphai.injectValue("chatHistory", messagesBody);
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+	    graphai.injectValue("userPrompt", userMessage.content);
+      const messages = (messagesBody ?? []).map(message => {
+        const { role, content } = message;
+        return { role, content };
+      });
+	    graphai.injectValue("chatHistory", messages);
+	    graphai.injectValue("llmEngine", llmEngine);
+	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
           // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
