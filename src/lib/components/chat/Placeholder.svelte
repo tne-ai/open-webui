@@ -16,6 +16,8 @@
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import MessageInput from './MessageInput.svelte';
 
+  import * as graphDataSet from './Agents/iterative_analysis';
+
 	const i18n = getContext('i18n');
 
 	export let transparentBackground = false;
@@ -36,6 +38,9 @@
 	export let selectedToolIds = [];
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
+
+  export let selectedGraph = "graphChat";
+  const graphNames = Object.keys(graphDataSet);
 
 	let models = [];
 
@@ -143,7 +148,6 @@
 					{/if}
 				</div>
 			</div>
-
 			<div class="flex mt-1 mb-2">
 				<div in:fade={{ duration: 100, delay: 50 }}>
 					{#if models[selectedModelIdx]?.info?.meta?.description ?? null}
@@ -206,12 +210,22 @@
 						dispatch('upload', e.detail);
 					}}
 					on:submit={(e) => {
-						dispatch('submit', e.detail);
+						dispatch('submit', {prompt: e.detail, graphId: selectedGraph});
 					}}
 				/>
 			</div>
 		</div>
 	</div>
+	<select
+		class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
+		bind:value={selectedGraph}
+		placeholder="Select a graphtheme"
+	>
+		{#each graphNames as item}
+			<option value="{item}">{item}</option>
+		{/each}
+	</select>
+
 	<div class="mx-auto max-w-2xl font-primary" in:fade={{ duration: 200, delay: 200 }}>
 		<div class="mx-5">
 			<Suggestions
