@@ -14,7 +14,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-  import { iterativeAnalysis, graphChat } from './Agents/iterative_analysis';
+  import * as graphDataSet from './Agents/iterative_analysis';
 
 	import {
 		chatId,
@@ -1850,7 +1850,8 @@
 			);
 
 			// Add chat data to the graph
-			const graphData = JSON.parse(JSON.stringify(iterativeAnalysis));
+      const graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
+      // console.log(history.graphId);
 			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
 	  let lastNodeId: string | null = null;
@@ -1931,7 +1932,9 @@
         return { role, content };
       });
 	    graphai.injectValue("chatHistory", messages);
-	    graphai.injectValue("llmEngine", llmEngine);
+      if (graphai.nodes["llmEngine"]) {
+	      graphai.injectValue("llmEngine", llmEngine);
+      }
 	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         if (result) {
@@ -2848,12 +2851,15 @@
 									}
 								}}
 								on:submit={async (e) => {
-									if (e.detail) {
+                  if (e.detail) {
+                    const { prompt, graphId } = e.detail;
+                    history.graphId = graphId;
+                    console.log(prompt, graphId);
 										await tick();
 										submitPrompt(
 											($settings?.richTextInput ?? true)
-												? e.detail.replaceAll('\n\n', '\n')
-												: e.detail
+												? prompt.replaceAll('\n\n', '\n')
+												: prompt
 										);
 									}
 								}}
