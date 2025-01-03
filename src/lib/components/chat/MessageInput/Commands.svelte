@@ -1,6 +1,9 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import * as graphDataSet from '../Agents/iterative_analysis';
+	import { selectedGraph } from '../../../stores/index';
+  	import { get } from 'svelte/store';
 
 	const dispatch = createEventDispatcher();
 
@@ -9,6 +12,7 @@
 	import { removeLastWordFromString } from '$lib/utils';
 	import { getPrompts } from '$lib/apis/prompts';
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
+	import GraphSelector from './Commands/GraphSelector.svelte';
 
 	import Prompts from './Commands/Prompts.svelte';
 	import Knowledge from './Commands/Knowledge.svelte';
@@ -17,6 +21,7 @@
 
 	export let prompt = '';
 	export let files = [];
+	export const graphNames = Object.keys(graphDataSet);
 
 	let loading = false;
 	let commandElement = null;
@@ -33,7 +38,7 @@
 	$: command = prompt?.split('\n').pop()?.split(' ')?.pop() ?? '';
 
 	let show = false;
-	$: show = ['/', '#', '@'].includes(command?.charAt(0)) || '\\#' === command.slice(0, 2);
+	$: show = ['/', '#', '@', ':'].includes(command?.charAt(0)) || '\\#' === command.slice(0, 2);
 
 	$: if (show) {
 		init();
@@ -57,6 +62,19 @@
 	{#if !loading}
 		{#if command?.charAt(0) === '/'}
 			<Prompts bind:this={commandElement} bind:prompt bind:files {command} />
+		{:else if command?.charAt(0) === ':'}
+			<GraphSelector
+				{command}
+				{graphNames}
+				on:select={(e) => {
+					prompt = removeLastWordFromString(prompt, command);
+					console.log('Event detail:', e.detail.data);
+					dispatch('select', {
+						type: 'graph',
+						data: e.detail
+				});
+				}}
+			/>
 		{:else if (command?.charAt(0) === '#' && command.startsWith('#') && !command.includes('# ')) || ('\\#' === command.slice(0, 2) && command.startsWith('#') && !command.includes('# '))}
 			<Knowledge
 				bind:this={commandElement}
