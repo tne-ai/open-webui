@@ -299,3 +299,46 @@ input[type='number'] {
 .hljs-strong {
 	font-weight: 700;
 }
+
+.mdc-chip-set {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.mdc-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    height: 28px;
+    border-radius: 14px;
+    background-color: #e0e0e0;
+    color: rgba(0, 0, 0, 0.87);
+    font-size: 13px;
+  }
+
+  .mdc-chip__text {
+    margin: 0 4px;
+  }
+
+  .mdc-chip__icon--trailing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  :global(.dark) .mdc-chip {
+    background-color: #3b3b3b;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  :global(.dark) .mdc-chip__icon--trailing {
+    color: rgba(255, 255, 255, 0.54);
+  }
