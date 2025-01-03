@@ -52,6 +52,8 @@ export const temporaryChatEnabled = writable(false);
 export const scrollPaginationEnabled = writable(false);
 export const currentChatPage = writable(1);
 
+export const selectedGraph = writable('graphChat');
+
 export type Model = OpenAIModel | OllamaModel;
 
 type BaseModel = {
