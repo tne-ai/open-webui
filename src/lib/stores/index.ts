@@ -71,6 +71,7 @@ export const currentChatPage = writable(1);
 
 export const isLastActiveTab = writable(true);
 export const playingNotificationSound = writable(false);
+export const selectedGraph = writable('graphChat');
 
 export type Model = OpenAIModel | OllamaModel;
 

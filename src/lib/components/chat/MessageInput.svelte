@@ -23,10 +23,13 @@
 	import { transcribeAudio } from '$lib/apis/audio';
 	import { uploadFile } from '$lib/apis/files';
 	import { getTools } from '$lib/apis/tools';
+	import { selectedGraph } from '../../stores/index'
+	import { get } from 'svelte/store';
 
 	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
 
 	import Tooltip from '../common/Tooltip.svelte';
+	import Chip from '../common/Chip.svelte';
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import Headphone from '../icons/Headphone.svelte';
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
@@ -38,8 +41,10 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { error, text } from '@sveltejs/kit';
 	import Image from '../common/Image.svelte';
+	import * as graphDataSet from './Agents/iterative_analysis';
 
 	const i18n = getContext('i18n');
+	const graphNames = Object.keys(graphDataSet);
 
 	export let transparentBackground = false;
 
@@ -81,6 +86,9 @@
 
 	let inputFiles;
 	let dragged = false;
+
+	let showSuggestions = false;
+	let graphSuggestions = [];
 
 	let user = null;
 	export let placeholder = '';
@@ -543,6 +551,27 @@
 								dispatch('submit', prompt);
 							}}
 						>
+						{#if $selectedGraph}
+							<div class="mb-2 flex items-center">
+							<div class="mdc-chip" role="row">
+								<span role="gridcell">
+								<span class="mdc-chip__text">{get(selectedGraph)}</span>
+								</span>
+								<button
+									class="mdc-chip__icon mdc-chip__icon--trailing"
+									on:click={() => selectedGraph.set(null)}
+								>
+								<svg class="h-4 w-4" viewBox="0 0 24 24">
+									<path
+									fill="currentColor"
+									d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"
+									/>
+								</svg>
+								</button>
+							</div>
+							</div>
+						{/if}
+
 							<div
 								class="flex-1 flex flex-col relative w-full rounded-3xl px-1 bg-gray-600/5 dark:bg-gray-400/5 dark:text-gray-100"
 								dir={$settings?.chatDirection ?? 'LTR'}
@@ -752,8 +781,7 @@
 													}
 
 													// Check for GraphAI process
-													if (prompt === '' && e.key == '\:') {
-														// Generate a chip
+													if (prompt === '' && e.key === ':') {
 														console.log("GraphAI process");
 													}
 
@@ -890,6 +918,7 @@
 												}}
 											/>
 										</div>
+
 									{:else}
 										<textarea
 											id="chat-input"
