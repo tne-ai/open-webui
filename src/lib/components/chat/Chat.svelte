@@ -15,6 +15,7 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
   import * as graphDataSet from './Agents/iterative_analysis';
+  import { useCytoscape } from './cytoscape';
 
 	import {
 		chatId,
@@ -1809,6 +1810,17 @@
 		return _response;
 	};
 
+  // cytoscape
+  let cytoscapeRef = null;
+  let {
+    setRef,
+    createCytoscape,
+    updateCytoscape,
+    // resetCytoscape,
+
+    updateGraphData,
+  } = useCytoscape();
+
   const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
 
@@ -1848,9 +1860,12 @@
 					}
 				})
 			);
-
+      // cytoscape
+      setRef(cytoscapeRef);
+      createCytoscape();
 			// Add chat data to the graph
       const graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
+      updateGraphData(graphData);
       // console.log(history.graphId);
 			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
@@ -1937,6 +1952,7 @@
       }
 	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
+        updateCytoscape(nodeId, state);
         if (result) {
           // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
@@ -2769,6 +2785,7 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
 								<Messages
 									chatId={$chatId}
 									bind:history
