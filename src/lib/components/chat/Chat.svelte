@@ -2546,6 +2546,7 @@
 								}}
 								on:submit={async (e) => {
                   if (e.detail) {
+					console.log(e.detail);
                     const { prompt, graphId } = e.detail;
                     history.graphId = graphId;
                     console.log(prompt, graphId);

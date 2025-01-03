@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { marked } from 'marked';
+	import { selectedGraph } from '../../stores/index';
+	import { get } from 'svelte/store';
 
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
 	import { blur, fade } from 'svelte/transition';
@@ -39,8 +41,7 @@
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
 
-  export let selectedGraph = "graphChat";
-  const graphNames = Object.keys(graphDataSet);
+  	const graphNames = Object.keys(graphDataSet);
 
 	let models = [];
 
@@ -205,26 +206,23 @@
 					{transparentBackground}
 					{stopResponse}
 					{createMessagePair}
+					{graphNames}
 					placeholder={$i18n.t('How can I help you today?')}
 					on:upload={(e) => {
 						dispatch('upload', e.detail);
-					}}
-					on:submit={(e) => {
-						dispatch('submit', {prompt: e.detail, graphId: selectedGraph});
-					}}
+					  }}
+					  on:submit={(e) => {
+						console.log('placeholder output', get(selectedGraph));
+						console.log('Event detail:', e.detail);
+						dispatch('submit', {
+						  prompt: e.detail, 
+						  graphId: get(selectedGraph)  // Pass the selectedGraph in submit
+						});
+					  }}
 				/>
 			</div>
 		</div>
 	</div>
-	<select
-		class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
-		bind:value={selectedGraph}
-		placeholder="Select a graphtheme"
-	>
-		{#each graphNames as item}
-			<option value="{item}">{item}</option>
-		{/each}
-	</select>
 
 	<div class="mx-auto max-w-2xl font-primary" in:fade={{ duration: 200, delay: 200 }}>
 		<div class="mx-5">
