@@ -131,7 +131,8 @@
 
 	let history = {
 		messages: {},
-		currentId: null
+		currentId: null,
+		graphId: '',
 	};
 
 	// Chat Input
@@ -1810,16 +1811,28 @@
 		return _response;
 	};
 
+  let graphId = history.graphId ?? "iterativeAnalysis"
+  let graphData = graphDataSet[graphId];
   // cytoscape
   let cytoscapeRef = null;
   let {
     setRef,
     createCytoscape,
     updateCytoscape,
-    // resetCytoscape,
-
     updateGraphData,
   } = useCytoscape();
+
+  $: if (cytoscapeRef) {
+    setRef(cytoscapeRef);
+    createCytoscape();
+  }
+  $: if (history.graphId) {
+    if (graphId !== history.graphId) {
+      graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
+      updateGraphData(graphData);
+    }
+  }
+  // end of cytoscape
 
   const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
@@ -1860,14 +1873,6 @@
 					}
 				})
 			);
-      // cytoscape
-      setRef(cytoscapeRef);
-      createCytoscape();
-			// Add chat data to the graph
-      const graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
-      updateGraphData(graphData);
-      // console.log(history.graphId);
-			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
 	  let lastNodeId: string | null = null;
       const outsideFunction = (context: AgentFunctionContext, token: string) => {

@@ -280,10 +280,9 @@ export const useCytoscape = () => {
   const updateGraphData = async (graphData) => {
     if (selectedGraph.version) {
       resetCytoscape();
-    } else {
-      selectedGraph = graphData;
-      cytoscapeData = cytoscapeFromGraph(selectedGraph);
     }
+    selectedGraph = graphData;
+    cytoscapeData = cytoscapeFromGraph(selectedGraph);
     if (cy) {
       cy.elements().remove();
       cy.add(cytoscapeData.elements);
