@@ -83,6 +83,8 @@
 		"codemirror": "^6.0.1",
 		"codemirror-lang-hcl": "^0.0.0-beta.2",
 		"crc-32": "^1.2.2",
+		"cytoscape": "^3.30.4",
+		"cytoscape-klay": "^3.1.4",
 		"dayjs": "^1.11.10",
 		"dompurify": "^3.1.6",
 		"eventsource-parser": "^1.1.2",
@@ -120,9 +122,9 @@
 		"turndown": "^7.2.0",
 		"uuid": "^9.0.1"
 	},
-  "resolutions": {
-    "string-width": "4.2.3"
-  },
+	"resolutions": {
+		"string-width": "4.2.3"
+	},
 	"engines": {
 		"node": ">=18.13.0 <=22.x.x",
 		"npm": ">=6.0.0"

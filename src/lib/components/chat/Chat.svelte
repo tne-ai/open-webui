@@ -15,6 +15,7 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
   import * as graphDataSet from './Agents/iterative_analysis';
+  import { useCytoscape } from './cytoscape';
 
 	import {
 		chatId,
@@ -135,7 +136,8 @@
 
 	let history = {
 		messages: {},
-		currentId: null
+		currentId: null,
+		graphId: '',
 	};
 
 	let taskId = null;
@@ -1633,6 +1635,29 @@
 		scrollToBottom();
 	};
 
+  let graphId = history.graphId ?? "iterativeAnalysis"
+  let graphData = graphDataSet[graphId];
+  // cytoscape
+  let cytoscapeRef = null;
+  let {
+    setRef,
+    createCytoscape,
+    updateCytoscape,
+    updateGraphData,
+  } = useCytoscape();
+
+  $: if (cytoscapeRef) {
+    setRef(cytoscapeRef);
+    createCytoscape();
+  }
+  $: if (history.graphId) {
+    if (graphId !== history.graphId) {
+      graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
+      updateGraphData(graphData);
+    }
+  }
+  // end of cytoscape
+
   const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
 
@@ -1672,11 +1697,6 @@
 					}
 				})
 			);
-
-			// Add chat data to the graph
-      const graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
-      // console.log(history.graphId);
-			// const graphData = JSON.parse(JSON.stringify(graphChat));
 
 	  let lastNodeId: string | null = null;
       const outsideFunction = (context: AgentFunctionContext, token: string) => {
@@ -1761,6 +1781,7 @@
       }
 	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
+        updateCytoscape(nodeId, state);
         if (result) {
           // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
@@ -2445,6 +2466,7 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
 								<Messages
 									chatId={$chatId}
 									bind:history
