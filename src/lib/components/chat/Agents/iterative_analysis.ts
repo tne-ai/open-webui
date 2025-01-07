@@ -43,7 +43,11 @@ export const iterativeAnalysis= {
       inputs: { array: [":runCodeGen.text", "!=", "False"] },
     },
     conversationLLM: {
-      agent: ":llmEngine",
+      agent: "openAIAgent",
+      params: {
+        model: "llama3.2:3b",
+        baseURL: "http://0.0.0.0:11434"
+      },
       inputs: {
         system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
         messages: ":chatHistory"
