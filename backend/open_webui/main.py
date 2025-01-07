@@ -696,7 +696,7 @@ class RedirectMiddleware(BaseHTTPMiddleware):
 app.add_middleware(RedirectMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://localhost:8080"],
+    allow_origins=["http://localhost:5174", "http://localhost:8081"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -736,15 +736,6 @@ async def inspect_websocket(request: Request, call_next):
                 content={"detail": "Invalid WebSocket upgrade request"},
             )
     return await call_next(request)
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ALLOW_ORIGIN,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 app.mount("/ws", socket_app)
