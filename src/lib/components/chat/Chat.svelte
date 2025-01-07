@@ -1461,24 +1461,12 @@
 					}
 
 					let _response = null;
-					if (model?.id.includes("tne")) {
-						_response = await sendPromptBP_RUNNER(model, prompt, responseMessageId, _chatId);
-					}
-					else if (model?.owned_by === 'ollama') {
-						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
-					else if (model?.id.includes('graphai')) {
-						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
-					}
-					else if (model?.id.includes('anthropic')) {
+					if (model?.id.includes('anthropic')) {
 						_response = await sendPromptGraphAI(model, "anthropicAgent", prompt, responseMessageId, _chatId);
 					}
-					else if (model?.owned_by === 'ollama') {
-						_response = await sendPromptOllama(model, prompt, responseMessageId, _chatId);
+					else {
+						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
 					}
-					else if (model) {
-						_response = await sendPromptOpenAI(model, prompt, responseMessageId, _chatId);
-					}
-					// _response = await sendPromptBP_RUNNER(model, prompt, responseMessageID, _chatId);
 					_responses.push(_response);
 
 					if (chatEventEmitter) clearInterval(chatEventEmitter);
@@ -1774,6 +1762,7 @@
           forWeb: true,
           apiKey: import.meta.env.VITE_OPEN_API_KEY,
           stream: true,
+		  baseURL: "http://127.0.0.1:11434/v1",
         },
         anthropicAgent: {
           forWeb: true,
@@ -1782,16 +1771,19 @@
         },
       };
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-	    graphai.injectValue("userPrompt", userMessage.content);
       const messages = (messagesBody ?? []).map(message => {
         const { role, content } = message;
         return { role, content };
       });
-	    graphai.injectValue("chatHistory", messages);
+	  if (graphai.nodes["modelName"]) {
+		  graphai.injectValue("modelName", model.id);
+	  }
+	  if (graphai.nodes["chatHistory"]) {
+		  graphai.injectValue("chatHistory", messages);
+	  }
       if (graphai.nodes["llmEngine"]) {
 	      graphai.injectValue("llmEngine", llmEngine);
       }
-	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         updateCytoscape(nodeId, state);
         if (result) {
