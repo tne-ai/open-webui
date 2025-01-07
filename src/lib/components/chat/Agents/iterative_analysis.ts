@@ -17,7 +17,6 @@ export const iterativeAnalysis= {
         bucket: "bp-authoring-files",
         region: "us-west-2",
       },
-      console: {after: true},
       inputs: {},
     },
     businessRules: {
@@ -27,7 +26,6 @@ export const iterativeAnalysis= {
         bucket: "bp-authoring-files",
         region: "us-west-2",
       },
-      console: {after: true},
       inputs: {},
     },
     runCodeGen: {
@@ -36,18 +34,13 @@ export const iterativeAnalysis= {
         messages: ":chatHistory",
         system: ["You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
       },
-      console: true,
     },
     checkInput: {
       agent: "compareAgent",
       inputs: { array: [":runCodeGen.text", "!=", "False"] },
     },
     conversationLLM: {
-      agent: "openAIAgent",
-      params: {
-        model: "llama3.2:3b",
-        baseURL: "http://0.0.0.0:11434"
-      },
+      agent: ":llmEngine",
       inputs: {
         system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
         messages: ":chatHistory"
@@ -63,6 +56,7 @@ export const iterativeAnalysis= {
         system: "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step."
       },
       if: ":checkInput",
+      console: true
     },
     promptDecomposerJson: {
       agent: "jsonParserAgent",
@@ -109,14 +103,12 @@ export const iterativeAnalysis= {
             inputs: {
               array: ":workflowSteps"
             },
-            console: true,
           },
           computedData: {
             agent: "popAgent",
             inputs: {
               array: ":results"
             },
-            console: true,
           },
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
@@ -165,6 +157,7 @@ export const iterativeAnalysis= {
                     temperature: ":codeGenerator_inputFiles.temperature",
                     max_tokens: ":codeGenerator_inputFiles.max_tokens",
                   },
+                  console: true
                 },
                 executeCode: {
                   agent: "pythonCodeAgent",
@@ -181,10 +174,6 @@ export const iterativeAnalysis= {
                   inputs: {
                     array: [":executeCode.onError.message", "!=", ""]
                   },
-                  console: {
-                    before: true,
-                    after: true
-                  }
                 },
                 addErrorToPrompt: {
                   agent: "stringTemplateAgent",
@@ -212,7 +201,6 @@ export const iterativeAnalysis= {
     },
     extractResults: {
       agent: "popAgent",
-      console: { before: true},
       inputs: {
         array: ":codeGenerator.results"
       }
