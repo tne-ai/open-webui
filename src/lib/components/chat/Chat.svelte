@@ -1762,6 +1762,7 @@
           forWeb: true,
           apiKey: import.meta.env.VITE_OPEN_API_KEY,
           stream: true,
+		  baseURL: "http://127.0.0.1:11434/v1",
         },
         anthropicAgent: {
           forWeb: true,
@@ -1770,16 +1771,19 @@
         },
       };
       const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-	    graphai.injectValue("userPrompt", userMessage.content);
       const messages = (messagesBody ?? []).map(message => {
         const { role, content } = message;
         return { role, content };
       });
-	    graphai.injectValue("chatHistory", messages);
+	  if (graphai.nodes["modelName"]) {
+		  graphai.injectValue("modelName", model.id);
+	  }
+	  if (graphai.nodes["chatHistory"]) {
+		  graphai.injectValue("chatHistory", messages);
+	  }
       if (graphai.nodes["llmEngine"]) {
 	      graphai.injectValue("llmEngine", llmEngine);
       }
-	    // graphai.injectValue("llmEngine", "anthropicAgent");
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         updateCytoscape(nodeId, state);
         if (result) {
