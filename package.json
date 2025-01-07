@@ -62,7 +62,7 @@
 		"@codemirror/language-data": "^6.5.1",
 		"@codemirror/theme-one-dark": "^6.1.2",
 		"@graphai/agent_filters": "^0.0.9",
-		"@graphai/llm_agents": "^0.2.5",
+		"@graphai/llm_agents": "^0.2.6",
 		"@graphai/vanilla": "^0.2.6",
 		"@huggingface/transformers": "^3.0.0",
 		"@mediapipe/tasks-vision": "^0.10.17",
