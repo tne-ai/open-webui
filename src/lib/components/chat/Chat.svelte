@@ -1917,6 +1917,13 @@
         secretAccessKey: import.meta.env.VITE_AWS_SECRET,
       };
 
+	  let openAIBaseURL: string;
+	  if (model?.owned_by === 'ollama') {
+		  openAIBaseURL = "http://127.0.0.1:11434/v1";
+	  } else {
+		  openAIBaseURL = "https://api.openai.com/v1";
+	  }
+
       const config = {
         global: {
           uid: "114520153332760575553",
@@ -1928,7 +1935,8 @@
           forWeb: true,
           apiKey: import.meta.env.VITE_OPEN_API_KEY,
           stream: true,
-		  baseURL: "http://127.0.0.1:11434/v1",
+		  baseURL: openAIBaseURL,
+		  model: model.id
         },
         anthropicAgent: {
           forWeb: true,
@@ -1953,9 +1961,9 @@
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         updateCytoscape(nodeId, state);
         if (result) {
-          // console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
+          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
-          // console.log(`${nodeId} ${agentId} ${state}`);
+          console.log(`${nodeId} ${agentId} ${state}`);
         }
       };
       await graphai.run();

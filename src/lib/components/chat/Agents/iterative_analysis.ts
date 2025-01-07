@@ -241,16 +241,11 @@ export const graphChat = {
     llmEngine: {
       value: ""
     },
-    modelName: {
-      value: ""
-    },
     llm: {
       agent: ":llmEngine",
-      params: {
-        model: ":modelName"
-      },
       isResult: true,
       inputs: { messages: ":chatHistory" },
+      console: true
     },
     output: {
       agent: "stringTemplateAgent",
