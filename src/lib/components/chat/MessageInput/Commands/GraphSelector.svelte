@@ -39,19 +39,17 @@
       >
         {#each filteredGraphs as graph, index}
         <button
-            class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-left flex items-center gap-2 {index === selectedIndex ? 'selected-command-option-button bg-gray-100 dark:bg-gray-700' : ''}"
-            on:click={() => {
-                selectedGraph.set(null);
-                console.log(graph)
-                selectedGraph.set(graph)
-                dispatch('select', {
-                    type: 'graph',
-                    data: graph
-                });
-            }}
+          class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-left flex items-center gap-2 {index === selectedIndex ? 'selected-command-option-button bg-gray-100 dark:bg-gray-700' : ''}"
+          on:click={() => {
+            selectedGraph.set(graph);
+            dispatch('select', {
+              type: 'graph',
+              data: graph
+            });
+          }}
         >
-            {graph}
-          </button>
+          {graph}
+        </button>
         {/each}
       </div>
     </div>
