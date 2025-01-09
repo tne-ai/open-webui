@@ -14,7 +14,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-  import * as graphDataSet from './Agents/iterative_analysis';
+  import * as graphDataSet from './Agents';
   import { useCytoscape } from './cytoscape';
 
 	import {

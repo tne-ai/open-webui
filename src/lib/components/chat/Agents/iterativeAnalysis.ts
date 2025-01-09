@@ -227,31 +227,3 @@ export const iterativeAnalysis= {
     }
   },
 };
-
-
-export const graphChat = {
-  version: 0.5,
-  //loop: {
-  //while: ":continue",
-  //},
-  nodes: {
-    chatHistory: {
-      value: []
-    },
-    llmEngine: {
-      value: ""
-    },
-    llm: {
-      agent: ":llmEngine",
-      isResult: true,
-      inputs: { messages: ":chatHistory" },
-      console: true
-    },
-    output: {
-      agent: "stringTemplateAgent",
-      inputs: {
-        text: "\x1b[32mAgent\x1b[0m: ${:llm.text}",
-      },
-    },
-  },
-};
