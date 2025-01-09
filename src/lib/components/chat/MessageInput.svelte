@@ -44,8 +44,7 @@
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
 	import CommandLine from '../icons/CommandLine.svelte';
-	import { deleteFileById } from '$lib/apis/files';
-	import * as graphDataSet from './Agents/iterative_analysis';
+	import * as graphDataSet from './Agents';
 
 	const i18n = getContext('i18n');
 	const graphNames = Object.keys(graphDataSet);
