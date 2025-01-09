@@ -1,6 +1,6 @@
 <script>
     import { createEventDispatcher } from 'svelte';
-    import * as graphDataSet from '../../Agents/iterative_analysis';
+    import * as graphDataSet from '../../Agents';
     import { selectedGraph } from '$lib/stores/index';
   	import { get } from 'svelte/store';
 

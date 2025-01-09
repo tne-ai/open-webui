@@ -18,7 +18,7 @@
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import MessageInput from './MessageInput.svelte';
 
-  import * as graphDataSet from './Agents/iterative_analysis';
+  import * as graphDataSet from './Agents';
 
 	const i18n = getContext('i18n');
 
