@@ -19,6 +19,21 @@ export const iterativeAnalysis= {
       },
       inputs: {},
     },
+    csvDataChunks: {
+      agent: "stringSplitterAgent",
+      inputs: {
+        text: ":csvData.text"
+      },
+      params: {
+        chunkSize: 400
+      }
+    },
+    csvDataHead: {
+      agent: "shiftAgent",
+      inputs: {
+        array: ":csvDataChunks.contents"
+      }
+    },
     businessRules: {
       agent: "s3FileAgent",
       params: {
@@ -52,10 +67,13 @@ export const iterativeAnalysis= {
       agent: ":llmEngine",
       inputs: {
         messages: ":chatHistory",
-        prompt: [":csvData.text", ":businessRules.text"],
-        system: "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step. The csv filename is retail_highlight_shopping_list_no_periods.csv"
+        system: [":csvDataHead.item", "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step. The csv filename is retail_highlight_shopping_list_no_periods.csv"]
+      },
+      params: {
+        temperature: 0
       },
       if: ":checkInput",
+      isResult: true,
       console: true
     },
     promptDecomposerJson: {
@@ -86,7 +104,7 @@ export const iterativeAnalysis= {
       graph: {
         version: 0.5,
         loop: {
-          while: ":workflowSteps"
+          while: ":stepsToRun"
         },
         nodes: {
           workflowSteps: {
@@ -103,14 +121,12 @@ export const iterativeAnalysis= {
             inputs: {
               array: ":workflowSteps"
             },
-            console: { after: true }
           },
           computedData: {
             agent: "popAgent",
             inputs: {
               array: ":results"
             },
-            console: true
           },
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
@@ -124,11 +140,12 @@ export const iterativeAnalysis= {
               inputs: ":inputs",
               userPrompt: ":shift.item.step"
             },
+            console: true
           },
           codeGeneratorSubroutine: {
             agent: "nestedAgent",
             inputs: {
-              prompt: ":codeGenerator_inputFiles.prompt",
+              prompt: ":shift.item.step",
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
               computedData: ":computedData",
               llmEngine: ":llmEngine",
