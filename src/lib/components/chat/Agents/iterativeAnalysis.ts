@@ -67,7 +67,7 @@ export const iterativeAnalysis= {
       agent: ":llmEngine",
       inputs: {
         messages: ":chatHistory",
-        system: [":csvDataHead.item", "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step. The csv filename is retail_highlight_shopping_list_no_periods.csv"]
+        system: [":csvDataHead.item", "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step. The csv filename is retail_highlight_shopping_list_no_periods.csv. Follow the format of [{'step': STEP}, {'step'}: STEP, ...]"]
       },
       params: {
         temperature: 0
@@ -92,7 +92,7 @@ export const iterativeAnalysis= {
       if: ":checkInput",
       isResult: true
     },
-    codeGenerator: {
+    codeGeneratorLoop: {
       agent: "nestedAgent",
       if: ":checkInput",
       inputs: {
@@ -104,7 +104,7 @@ export const iterativeAnalysis= {
       graph: {
         version: 0.5,
         loop: {
-          while: ":stepsToRun"
+          while: ":workflowSteps"
         },
         nodes: {
           workflowSteps: {
@@ -138,89 +138,41 @@ export const iterativeAnalysis= {
             inputs: {
               file: ":file",
               inputs: ":inputs",
-              userPrompt: ":shift.item.step"
             },
-            console: true
           },
-          codeGeneratorSubroutine: {
-            agent: "nestedAgent",
+          writeCode: {
+            agent: ":llmEngine",
             inputs: {
               prompt: ":shift.item.step",
-              codeGenerator_inputFiles: ":codeGenerator_inputFiles",
-              computedData: ":computedData",
-              llmEngine: ":llmEngine",
+              system: [":codeGenerator_inputFiles.system", "Remember that, to fetch a file with session.get_object(), you MUST only pass in the filename as a parameter (string)."],
+              temperature: ":codeGenerator_inputFiles.temperature",
+              max_tokens: ":codeGenerator_inputFiles.max_tokens",
             },
-            graph: {
-              version: 0.5,
-              loop: {
-                while: ":continue",
-              },
-              nodes: {
-                continue: {
-                  value: false,
-                  update: ":catchError"
-                },
-                prompt: {
-                  value: "",
-                  update: ":addErrorToPrompt",
-                },
-                writeCode: {
-                  agent: ":llmEngine",
-                  inputs: {
-                    prompt: ":prompt",
-                    system: ":codeGenerator_inputFiles.system",
-                    temperature: ":codeGenerator_inputFiles.temperature",
-                    max_tokens: ":codeGenerator_inputFiles.max_tokens",
-                  },
-                  console: {
-                    before: true,
-                  }
-                },
-                executeCode: {
-                  agent: "pythonCodeAgent",
-                  params: {},
-                  inputs: {
-                    code: ":writeCode.text",
-                    data: ":computedData.item"
-                  },
-                  isResult: true
-                },
-                 catchError: {
-                  agent: "compareAgent",
-                  if: ":executeCode.onError",
-                  inputs: {
-                    array: [":executeCode.onError.message", "!=", ""]
-                  },
-                },
-                addErrorToPrompt: {
-                  agent: "stringTemplateAgent",
-                  if: ":executeCode.onError",
-                  params: {
-                    template: "You previously generated code that attempted to answer the question: ${query}, but encountered this error: ${errorMessage}. Please try again, avoiding that error."
-                  },
-                  inputs: {
-                    query: ":prompt",
-                    errorMessage: ":executeCode.onError.message"
-                  }
-                }
-              }
+          },
+          executeCode: {
+            agent: "pythonCodeAgent",
+            params: {},
+            inputs: {
+              code: ":writeCode.text",
+              data: ":computedData.item"
             },
+            isResult: true
           },
           reducer: {
             agent: "pushAgent",
             inputs: {
               array: ":results",
-              item: ":codeGeneratorSubroutine.executeCode.data"
+              item: ":executeCode.data"
             },
           }
         }
-      },
+      }
     },
     extractResults: {
       agent: "popAgent",
       console: { before: true},
       inputs: {
-        array: ":codeGenerator.results"
+        array: ":codeGeneratorLoop.results"
       }
     },
     parsedResults: {
@@ -231,15 +183,14 @@ export const iterativeAnalysis= {
     },
     summarizeDataToUser: {
       agent: ":llmEngine",
-      params: {
-        model: "gpt-4o",
-        max_tokens: 4096,
-      },
       isResult: true,
       inputs: {
         messages: ":chatHistory",
         prompt: ["[Answer: ", ":parsedResults", "]"],
-        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
+        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable. IF POSSIBLE, display all of the data you are given.",
+      },
+      console: {
+        before: true
       }
     }
   },

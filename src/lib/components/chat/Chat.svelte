@@ -1867,7 +1867,6 @@
 	  let lastNodeId: string | null = null;
       const outsideFunction = (context: AgentFunctionContext, token: string) => {
 	    if (context.debugInfo.nodeId !== lastNodeId && lastNodeId !== null) {
-			console.log("HI THERE");
 			responseMessage.content = (responseMessage.content ?? "") + "\n\n" + token;
 		} else {
 			responseMessage.content = (responseMessage.content ?? "") + token;
