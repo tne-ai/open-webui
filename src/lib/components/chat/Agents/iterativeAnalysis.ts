@@ -63,89 +63,47 @@ export const iterativeAnalysis = {
       unless: ":checkInput",
       isResult: true
     },
-    promptDecomposer: {
+    questionExtractor: {
       agent: ":llmEngine",
       inputs: {
         messages: ":chatHistory",
-        system: [":csvDataHead.item", "You have been given a query (and potentially chat history) related to the attached dataset. Decompose this query into a list of pseudocode steps required in order to extract the requested data from the dataset. Only generate this list, and nothing else. Be as specific as possible; your outputs will be used to guide small, limited capability, language models to generate code for each step. Each step should output a dataframe that can be inputted by the next step. Output your list as valid JSON, with a 'step' field corresponding to the pseudocode text only (no nesting). The first step should also be 'Load the dataframe ${fileName} from S3. For extremely simple operations, you may combine multiple operations into a single step. The csv filename is retail_highlight_shopping_list_no_periods.csv. Follow the format of [{'step': STEP}, {'step'}: STEP, ...]"]
+        system: "You have been given a chat history. From that, output a string which is a summarized version of the question that the user asking, that is complete enough to be self-sufficient in terms of knowledge. You should summarize anything from the history relevant to answering the question, so that it can be answered without reading the entire prior context."
       },
       params: {
         temperature: 0
       },
       if: ":checkInput",
-      isResult: true,
-      console: true
     },
-    promptDecomposerJson: {
-      agent: "jsonParserAgent",
-      inputs: {
-        text: ":promptDecomposer.text.codeBlock()"
-      },
-      if: ":checkInput",
-    },
-    promptDecomposerSummary: {
-      agent: ":llmEngine",
-      inputs: {
-        system: "You are helpful summarizing agent. You'll receive a list of steps which are currently being computed by a complex AI system. Using this list, synthesize it into a plan of action and explain to the user what the system is doing in simple, clear terms (the user is a DTC fashion executive, not an engineer). Refer to the system in the first-person.",
-        prompt: ":promptDecomposer.text.codeBlock()",
-      },
-      if: ":checkInput",
-      isResult: true
-    },
-    codeGeneratorLoop: {
+    codeGenerator: {
       agent: "nestedAgent",
       if: ":checkInput",
       inputs: {
         file: [":csvData"],
         inputs: [],
-        workflowSteps: ":promptDecomposerJson",
+        question: ":questionExtractor.text",
         llmEngine: ":llmEngine"
       },
       graph: {
         version: 0.5,
-        loop: {
-          while: ":workflowSteps"
-        },
         nodes: {
-          workflowSteps: {
-            value: [],
-            update: ":shift.array",
-          },
-          results: {
-            value: [],
-            update: ":reducer.array",
-            isResult: true
-          },
-          shift: {
-            agent: "shiftAgent",
-            inputs: {
-              array: ":workflowSteps"
-            },
-          },
-          computedData: {
-            agent: "popAgent",
-            inputs: {
-              array: ":results"
-            },
-          },
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
             params: {
-              prompt: "Return the results as a pd.DataFrame. Unless your instructions are to load the dataframe from S3, access the dataframe using a variable `PROCESS_INPUT`, which is a dataframe serialized into a list object. Use pd.DataFrame(PROCESS_INPUT) to access the dataframe. You MUST convert all timestamps to string, as they are not JSON-serializable. Pandas series are also not serializable; avoid these." ,
+              prompt: "Return the results as a pd.DataFrame. Pandas series are not serializable; avoid these." ,
               bucket: "bp-authoring-files",
               region: "us-west-2",
             },
             inputs: {
               file: ":file",
               inputs: ":inputs",
+              userPrompt: ":question"
             },
           },
           codeGeneratorSubroutine: {
             agent: "nestedAgent",
             inputs: {
-              prompt: ":shift.item.step",
+              prompt: ":codeGenerator_inputFiles.prompt",
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
-              computedData: ":computedData",
               llmEngine: ":llmEngine",
             },
             graph: {
@@ -170,16 +128,12 @@ export const iterativeAnalysis = {
                     temperature: ":codeGenerator_inputFiles.temperature",
                     max_tokens: ":codeGenerator_inputFiles.max_tokens",
                   },
-                  console: {
-                    before: true,
-                  }
                 },
                 executeCode: {
                   agent: "pythonCodeAgent",
                   params: {},
                   inputs: {
                     code: ":writeCode.text",
-                    data: ":computedData.item"
                   },
                   isResult: true
                 },
@@ -197,34 +151,27 @@ export const iterativeAnalysis = {
                     template: "You previously generated code that attempted to answer the question: ${query}, but encountered this error: ${errorMessage}. Please try again, avoiding that error."
                   },
                   inputs: {
-                    query: ":prompt",
+                    query: ":codeGenerator_inputFiles.prompt",
                     errorMessage: ":executeCode.onError.message"
                   }
                 }
               }
-            },
+            }
           },
-          reducer: {
-            agent: "pushAgent",
+          extractResults: {
+            agent: "copyAgent",
             inputs: {
-              array: ":results",
-              item: ":codeGeneratorSubroutine.executeCode.data"
+              array: ":codeGeneratorSubroutine.executeCode.data"
             },
+            isResult: true
           }
         }
-      }
-    },
-    extractResults: {
-      agent: "popAgent",
-      console: { before: true},
-      inputs: {
-        array: ":codeGeneratorLoop.results"
       }
     },
     parsedResults: {
       agent: "jsonParserAgent",
       inputs: {
-        data: ":extractResults.item"
+        data: ":codeGenerator.extractResults.array"
       },
     },
     summarizeDataToUser: {
@@ -233,8 +180,9 @@ export const iterativeAnalysis = {
       inputs: {
         messages: ":chatHistory",
         prompt: ["[Answer: ", ":parsedResults", "]"],
-        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable. IF POSSIBLE, display all of the data you are given.",
+        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
       },
+
       console: {
         before: true
       }
