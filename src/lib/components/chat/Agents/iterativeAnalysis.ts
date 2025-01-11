@@ -1,4 +1,4 @@
-export const iterativeAnalysis= {
+export const iterativeAnalysis = {
   version: 0.5,
   nodes: {
     userPrompt: {
@@ -140,29 +140,75 @@ export const iterativeAnalysis= {
               inputs: ":inputs",
             },
           },
-          writeCode: {
-            agent: ":llmEngine",
+          codeGeneratorSubroutine: {
+            agent: "nestedAgent",
             inputs: {
               prompt: ":shift.item.step",
-              system: [":codeGenerator_inputFiles.system", "Remember that, to fetch a file with session.get_object(), you MUST only pass in the filename as a parameter (string)."],
-              temperature: ":codeGenerator_inputFiles.temperature",
-              max_tokens: ":codeGenerator_inputFiles.max_tokens",
+              codeGenerator_inputFiles: ":codeGenerator_inputFiles",
+              computedData: ":computedData",
+              llmEngine: ":llmEngine",
             },
-          },
-          executeCode: {
-            agent: "pythonCodeAgent",
-            params: {},
-            inputs: {
-              code: ":writeCode.text",
-              data: ":computedData.item"
+            graph: {
+              version: 0.5,
+              loop: {
+                while: ":continue",
+              },
+              nodes: {
+                continue: {
+                  value: false,
+                  update: ":catchError"
+                },
+                prompt: {
+                  value: "",
+                  update: ":addErrorToPrompt",
+                },
+                writeCode: {
+                  agent: ":llmEngine",
+                  inputs: {
+                    prompt: ":prompt",
+                    system: ":codeGenerator_inputFiles.system",
+                    temperature: ":codeGenerator_inputFiles.temperature",
+                    max_tokens: ":codeGenerator_inputFiles.max_tokens",
+                  },
+                  console: {
+                    before: true,
+                  }
+                },
+                executeCode: {
+                  agent: "pythonCodeAgent",
+                  params: {},
+                  inputs: {
+                    code: ":writeCode.text",
+                    data: ":computedData.item"
+                  },
+                  isResult: true
+                },
+                 catchError: {
+                  agent: "compareAgent",
+                  if: ":executeCode.onError",
+                  inputs: {
+                    array: [":executeCode.onError.message", "!=", ""]
+                  },
+                },
+                addErrorToPrompt: {
+                  agent: "stringTemplateAgent",
+                  if: ":executeCode.onError",
+                  params: {
+                    template: "You previously generated code that attempted to answer the question: ${query}, but encountered this error: ${errorMessage}. Please try again, avoiding that error."
+                  },
+                  inputs: {
+                    query: ":prompt",
+                    errorMessage: ":executeCode.onError.message"
+                  }
+                }
+              }
             },
-            isResult: true
           },
           reducer: {
             agent: "pushAgent",
             inputs: {
               array: ":results",
-              item: ":executeCode.data"
+              item: ":codeGeneratorSubroutine.executeCode.data"
             },
           }
         }
