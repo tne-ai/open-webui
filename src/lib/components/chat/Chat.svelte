@@ -1925,7 +1925,7 @@
 
       const config = {
         global: {
-          uid: "114520153332760575553",
+          uid: "london-demo-1-13",
         },
         pythonCodeAgent: { python_runner_server: "http://0.0.0.0:8080" },
         s3FileAgent: { credentials: s3Credentials },

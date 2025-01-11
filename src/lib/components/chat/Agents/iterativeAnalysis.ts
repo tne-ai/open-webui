@@ -13,7 +13,7 @@ export const iterativeAnalysis = {
     csvData: {
       agent: "s3FileAgent",
       params: {
-        fileName: "retail_highlight_shopping_list_no_periods.csv",
+        fileName: "handbags-shopping_list-no_run-1_1-with_periods_cleaned.csv",
         bucket: "bp-authoring-files",
         region: "us-west-2",
       },
@@ -34,14 +34,53 @@ export const iterativeAnalysis = {
         array: ":csvDataChunks.contents"
       }
     },
-    businessRules: {
+    domainRules: {
       agent: "s3FileAgent",
       params: {
-        fileName: "model-friendly rules 2024-08-19.txt",
+        fileName: "tejv-domain-rules.txt",
         bucket: "bp-authoring-files",
         region: "us-west-2",
       },
       inputs: {},
+    },
+    ruleSyntaxKey: {
+      agent: "s3FileAgent",
+      params: {
+        fileName: "model-friendly-rule-syntax-key.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2"
+      }
+    },
+    chatExplainPrompt: {
+      agent: "s3FileAgent",
+      params: {
+        fileName: "chat_explain_prompt.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2"
+      }
+    },
+    metadata: {
+      agent: "s3FileAgent",
+      params: {
+        fileName: "complete-handbags-shopping_list-no_run-1_1-with_periods-metadata.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2"
+      }
+    },
+    relevancePrompt: {
+      agent: "s3FileAgent",
+      params: {
+        fileName: "ruleset_relevance_prompt.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2"
+      }
+    },
+    rulesetRelevance: {
+      agent: ":llmEngine",
+      inputs: {
+        messages: ":chatHistory",
+        system: [":relevancePrompt.text", "\n\n", ":ruleSyntaxKey.text", "\n\n", ":csvDataHead.item"]
+      },
     },
     runCodeGen: {
       agent: ":llmEngine",
@@ -81,7 +120,9 @@ export const iterativeAnalysis = {
         file: [":csvData"],
         inputs: [],
         question: ":questionExtractor.text",
-        llmEngine: ":llmEngine"
+        llmEngine: ":llmEngine",
+        relevantRules: ":rulesetRelevance",
+        ruleSyntaxKey: ":ruleSyntaxKey"
       },
       graph: {
         version: 0.5,
@@ -89,7 +130,7 @@ export const iterativeAnalysis = {
           codeGenerator_inputFiles: {
             agent: "codeGenerationTemplateAgent",
             params: {
-              prompt: "Return the results as a pd.DataFrame. Pandas series are not serializable; avoid these." ,
+              prompt: "For the given question, you must generate a pd.DataFrame. Do NOT use the matplotlib library. Even when asked to generate a certain type of chart, like a bar or line, you must simply generate a pd.DataFrame that will be amenable to downstream charting.",
               bucket: "bp-authoring-files",
               region: "us-west-2",
             },
@@ -105,6 +146,8 @@ export const iterativeAnalysis = {
               prompt: ":codeGenerator_inputFiles.prompt",
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
               llmEngine: ":llmEngine",
+              relevantRules: ":relevantRules",
+              ruleSyntaxKey: ":ruleSyntaxKey"
             },
             graph: {
               version: 0.5,
@@ -124,7 +167,7 @@ export const iterativeAnalysis = {
                   agent: ":llmEngine",
                   inputs: {
                     prompt: ":prompt",
-                    system: ":codeGenerator_inputFiles.system",
+                    system: [":codeGenerator_inputFiles.system", "\n\n", ":relevantRules.text", "\n\n", ":ruleSyntaxKey.text"],
                     temperature: ":codeGenerator_inputFiles.temperature",
                     max_tokens: ":codeGenerator_inputFiles.max_tokens",
                   },
@@ -180,7 +223,7 @@ export const iterativeAnalysis = {
       inputs: {
         messages: ":chatHistory",
         prompt: ["[Answer: ", ":parsedResults", "]"],
-        system: "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
+        system: ":chatExplainPrompt.text"
       },
 
       console: {
