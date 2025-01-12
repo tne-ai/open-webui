@@ -1,4 +1,4 @@
-export const maria= {
+export const Maria = {
   version: 0.5,
   nodes: {
     chatHistory: {

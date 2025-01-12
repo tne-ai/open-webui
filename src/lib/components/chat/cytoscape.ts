@@ -189,7 +189,7 @@ const cytoscapeFromGraph = (_graph_data: GraphData) => {
         elements.edges.push(edge);
       });
       // nested
-      if ("agent" in node && node.agent === "nestedAgent") {
+      if ("agent" in node && node.agent === "nestedAgent" && "graphGenerator" !in node) {
         const graph = typeof node.graph === "string" ? JSON.parse(node.graph) : { ...node.graph };
 
         const staticInputs: Record<string, string[]> = Object.keys(graph.nodes)
@@ -281,7 +281,9 @@ export const useCytoscape = () => {
   };
   const updateGraphData = async (graphData) => {
     if (selectedGraph.version) {
-      resetCytoscape();
+      if (!selectedGraph.nodes["graphGenerator"]) {
+        resetCytoscape();
+      }
     }
     selectedGraph = graphData;
     cytoscapeData = cytoscapeFromGraph(selectedGraph);

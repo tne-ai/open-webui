@@ -1,4 +1,4 @@
-export const graphChat = {
+export const Chat = {
   version: 0.5,
   nodes: {
     chatHistory: {
