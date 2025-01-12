@@ -1,4 +1,4 @@
-export const Analyze = {
+export const LocalAnalyze = {
   version: 0.5,
   nodes: {
     userPrompt: {
@@ -9,6 +9,33 @@ export const Analyze = {
     },
     llmEngine: {
       value: "",
+    },
+    difficultyClassifier: {
+      agent: "s3FileAgent",
+      params: {
+        fileName: "code_cache.txt",
+        bucket: "bp-authoring-files",
+        region: "us-west-2",
+      },
+    },
+    analyzeDifficulty: {
+      agent: ":llmEngine",
+      inputs: {
+        prompt: ":userPrompt",
+        system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
+      },
+    },
+    highDifficulty: {
+      agent: "compareAgent",
+      inputs: { array: [":analyzeDifficulty.text", "==", "False"] }
+    },
+    executeCodeEasy: {
+      agent: "pythonCodeAgent",
+      unless: ":highDifficulty",
+      params: {},
+      inputs: {
+        code: ":analyzeDifficulty.text",
+      },
     },
     csvData: {
       agent: "s3FileAgent",
@@ -34,23 +61,6 @@ export const Analyze = {
         array: ":csvDataChunks.contents"
       }
     },
-    domainRules: {
-      agent: "s3FileAgent",
-      params: {
-        fileName: "tejv-domain-rules.txt",
-        bucket: "bp-authoring-files",
-        region: "us-west-2",
-      },
-      inputs: {},
-    },
-    ruleSyntaxKey: {
-      agent: "s3FileAgent",
-      params: {
-        fileName: "model-friendly-rule-syntax-key.txt",
-        bucket: "bp-authoring-files",
-        region: "us-west-2"
-      }
-    },
     chatExplainPrompt: {
       agent: "s3FileAgent",
       params: {
@@ -67,42 +77,6 @@ export const Analyze = {
         region: "us-west-2"
       }
     },
-    relevancePrompt: {
-      agent: "s3FileAgent",
-      params: {
-        fileName: "ruleset_relevance_prompt.txt",
-        bucket: "bp-authoring-files",
-        region: "us-west-2"
-      }
-    },
-    rulesetRelevance: {
-      agent: ":llmEngine",
-      inputs: {
-        messages: ":chatHistory",
-        system: [":relevancePrompt.text", "\n\n", ":domainRules.text", "\n\n", ":ruleSyntaxKey.text", "\n\n", ":csvDataHead.item"]
-      },
-      isResult: true
-    },
-    runCodeGen: {
-      agent: ":llmEngine",
-      inputs: {
-        messages: ":chatHistory",
-        system: ["You are capable of either returning True or False. You are part of a larger system that has access to a dataset containing product information and sales data for DTC goods. Return True if the question you receive is likely related to specific information in this dataset (e.g product attributes, sales figures). Otherwise, if just asking for some general field, like a definition or some other question, return False. If the user asks for any type of quantity referencing the given definitions, return True unless they are asking for a definition, explanation, etc."]
-      },
-    },
-    checkInput: {
-      agent: "compareAgent",
-      inputs: { array: [":runCodeGen.text", "!=", "False"] },
-    },
-    conversationLLM: {
-      agent: ":llmEngine",
-      inputs: {
-        system: "You are a helpful chat assistant with an expertise in DTC consumer fashion.",
-        messages: ":chatHistory"
-      },
-      unless: ":checkInput",
-      isResult: true
-    },
     questionExtractor: {
       agent: ":llmEngine",
       inputs: {
@@ -112,18 +86,15 @@ export const Analyze = {
       params: {
         temperature: 0
       },
-      if: ":checkInput",
     },
-    codeGenerator: {
+    codeGeneratorDifficult: {
       agent: "nestedAgent",
-      if: ":checkInput",
+      if: ":highDifficulty",
       inputs: {
         file: [":csvData"],
         inputs: [],
         question: ":questionExtractor.text",
         llmEngine: ":llmEngine",
-        relevantRules: ":rulesetRelevance",
-        ruleSyntaxKey: ":ruleSyntaxKey"
       },
       params: {
         temperature: 0
@@ -150,8 +121,6 @@ export const Analyze = {
               prompt: ":codeGenerator_inputFiles.prompt",
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
               llmEngine: ":llmEngine",
-              relevantRules: ":relevantRules",
-              ruleSyntaxKey: ":ruleSyntaxKey"
             },
             graph: {
               version: 0.5,
@@ -171,7 +140,7 @@ export const Analyze = {
                   agent: ":llmEngine",
                   inputs: {
                     prompt: ":prompt",
-                    system: [":codeGenerator_inputFiles.system", "\n\n", ":relevantRules.text", "\n\n", ":ruleSyntaxKey.text"],
+                    system: [":codeGenerator_inputFiles.system"],
                     temperature: ":codeGenerator_inputFiles.temperature",
                     max_tokens: ":codeGenerator_inputFiles.max_tokens",
                   },
@@ -217,24 +186,36 @@ export const Analyze = {
         }
       }
     },
-    parsedResults: {
+    parsedResultsDifficult: {
       agent: "jsonParserAgent",
       inputs: {
-        data: ":codeGenerator.extractResults.array"
+        data: ":codeGeneratorDifficult.extractResults.array"
       },
     },
-    summarizeDataToUser: {
+    parsedResultsEasy: {
+      agent: "jsonParserAgent",
+      inputs: {
+        data: ":executeCodeEasy.data"
+      },
+    },
+    summarizeDataToUserDifficult: {
       agent: ":llmEngine",
+      if: ":highDifficulty",
       isResult: true,
       inputs: {
         messages: ":chatHistory",
-        prompt: ["[Answer: ", ":parsedResults", "]"],
+        prompt: ["[Answer: ", ":parsedResultsDifficult", "]"],
         system: ":chatExplainPrompt.text"
       },
-
-      console: {
-        before: true
+    },
+    summarizeDataToUserEasy: {
+      agent: ":llmEngine",
+      unless: ":highDifficulty",
+      isResult: true,
+      inputs: {
+        prompt: ":userPrompt",
+        system: ["[Answer: ", ":parsedResultsEasy", "]\n\n", ":chatExplainPrompt.text", "\n\n", "This should be polished for a non-technical user. Give adequate details."]
       }
     }
-  },
+  }
 };
