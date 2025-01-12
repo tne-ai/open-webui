@@ -89,6 +89,9 @@ export const iterativeAnalysis= {
         workflowSteps: ":promptDecomposerJson",
         llmEngine: ":llmEngine"
       },
+      params: {
+        temperature: 0
+      },
       graph: {
         version: 0.5,
         loop: {
