@@ -124,6 +124,9 @@ export const Analyze = {
         relevantRules: ":rulesetRelevance",
         ruleSyntaxKey: ":ruleSyntaxKey"
       },
+      params: {
+        temperature: 0
+      },
       graph: {
         version: 0.5,
         nodes: {
