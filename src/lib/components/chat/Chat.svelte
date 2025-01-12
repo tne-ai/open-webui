@@ -90,6 +90,7 @@
   import * as agents from "@graphai/vanilla";
   import { openAIAgent } from "@graphai/openai_agent";
   import { anthropicAgent } from "@graphai/anthropic_agent";
+  import { fetchAgent, wikipediaAgent } from "@graphai/service_agents";
   import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
   import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
@@ -1777,7 +1778,7 @@
           stream: true,
         },
       };
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, fetchAgent, wikipediaAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
       const messages = (messagesBody ?? []).map(message => {
         const { role, content } = message;
         return { role, content };
@@ -1920,7 +1921,7 @@
 			console.error('Error:', error);
 			responseMessage.error = {
 				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
-					provider: 'BP Runner'
+					provider: 'GraphAI'
 				})
 			};
 			responseMessage.done = true;
@@ -2093,7 +2094,7 @@
 			console.error('Error:', error);
 			responseMessage.error = {
 				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
-					provider: 'BP Runner'
+					provider: 'GraphAI'
 				})
 			};
 			responseMessage.done = true;
