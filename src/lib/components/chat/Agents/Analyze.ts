@@ -1,4 +1,4 @@
-export const iterativeAnalysis = {
+export const Analyze = {
   version: 0.5,
   nodes: {
     userPrompt: {
