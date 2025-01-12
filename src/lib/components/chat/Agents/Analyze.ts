@@ -73,6 +73,7 @@ export const Analyze = {
         prompt: ":userPrompt",
         system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
       },
+      isResult: true
     },
     highDifficulty: {
       agent: "compareAgent",
@@ -142,7 +143,7 @@ export const Analyze = {
     },
     codeGenerator: {
       agent: "nestedAgent",
-      if: ":checkInput",
+      if: ":highDifficulty",
       inputs: {
         file: [":csvData"],
         inputs: [],
