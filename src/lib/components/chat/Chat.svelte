@@ -1792,6 +1792,9 @@
       if (graphai.nodes["llmEngine"]) {
 	      graphai.injectValue("llmEngine", llmEngine);
       }
+	  if (graphai.nodes["userPrompt"]) {
+	      graphai.injectValue("userPrompt", userMessage.content);
+      }
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
         updateCytoscape(nodeId, state);
         if (result) {
