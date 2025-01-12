@@ -79,9 +79,8 @@ export const Analyze = {
       agent: ":llmEngine",
       inputs: {
         messages: ":chatHistory",
-        system: [":relevancePrompt.text", "\n\n", ":domainRules.text", "\n\n", ":ruleSyntaxKey.text", "\n\n", ":csvDataHead.item"]
+        system: [":relevancePrompt.text", "\n\n", ":domainRules.text", "\n\n", ":ruleSyntaxKey.text", "\n\n", ":metadata.text"]
       },
-      isResult: true
     },
     runCodeGen: {
       agent: ":llmEngine",
@@ -123,7 +122,8 @@ export const Analyze = {
         question: ":questionExtractor.text",
         llmEngine: ":llmEngine",
         relevantRules: ":rulesetRelevance",
-        ruleSyntaxKey: ":ruleSyntaxKey"
+        ruleSyntaxKey: ":ruleSyntaxKey",
+        metadata: ":metadata"
       },
       params: {
         temperature: 0
@@ -151,7 +151,8 @@ export const Analyze = {
               codeGenerator_inputFiles: ":codeGenerator_inputFiles",
               llmEngine: ":llmEngine",
               relevantRules: ":relevantRules",
-              ruleSyntaxKey: ":ruleSyntaxKey"
+              ruleSyntaxKey: ":ruleSyntaxKey",
+              metadata: ":metadata"
             },
             graph: {
               version: 0.5,
@@ -171,7 +172,7 @@ export const Analyze = {
                   agent: ":llmEngine",
                   inputs: {
                     prompt: ":prompt",
-                    system: [":codeGenerator_inputFiles.system", "\n\n", ":relevantRules.text", "\n\n", ":ruleSyntaxKey.text"],
+                    system: [":codeGenerator_inputFiles.system", "\n\n", ":relevantRules.text", "\n\n", ":ruleSyntaxKey.text", "\n\n", ":metadata.text"],
                     temperature: ":codeGenerator_inputFiles.temperature",
                     max_tokens: ":codeGenerator_inputFiles.max_tokens",
                   },
