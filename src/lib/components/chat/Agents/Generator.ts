@@ -54,6 +54,7 @@ export const Generator = {
                  "graphAI graph outputs in json format\n",
                  "[documentation of GraphAI]\n${:document}",
                  "[sample graph]\n\```json\\n${:sampleGraph}\\n```\\n",
+                 "For weather, directly input the latitude/longitude into the GraphAI graph you write"
                 ]
       },
       params: {
