@@ -22,8 +22,9 @@ export const LocalAnalyze = {
       agent: ":llmEngine",
       inputs: {
         prompt: ":userPrompt",
-        system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
+        system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code wrapped in ``` and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
       },
+      isResult: true
     },
     highDifficulty: {
       agent: "compareAgent",
@@ -34,7 +35,7 @@ export const LocalAnalyze = {
       unless: ":highDifficulty",
       params: {},
       inputs: {
-        code: ":analyzeDifficulty.text",
+        code: ":analyzeDifficulty.text.codeBlock()",
       },
     },
     csvData: {
