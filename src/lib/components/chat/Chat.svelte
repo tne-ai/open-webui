@@ -1917,6 +1917,13 @@
         secretAccessKey: import.meta.env.VITE_AWS_SECRET,
       };
 
+	  let modelToInject: string;
+	  if (model.id.includes('tne')) {
+		   modelToInject = 'gpt-4o';
+	  } else {
+		   modelToInject = model.id;
+	  }
+
 	  let openAIBaseURL: string;
 	  if (model?.owned_by === 'ollama') {
 		  openAIBaseURL = "http://127.0.0.1:11434/v1";
@@ -1936,7 +1943,7 @@
           apiKey: import.meta.env.VITE_OPEN_API_KEY,
           stream: true,
 		  baseURL: openAIBaseURL,
-		  model: model.id
+		  model: modelToInject
         },
         anthropicAgent: {
           forWeb: true,
@@ -1950,7 +1957,7 @@
         return { role, content };
       });
 	  if (graphai.nodes["modelName"]) {
-		  graphai.injectValue("modelName", model.id);
+		  graphai.injectValue("modelName", modelToInject);
 	  }
 	  if (graphai.nodes["chatHistory"]) {
 		  graphai.injectValue("chatHistory", messages);
@@ -1969,124 +1976,10 @@
           console.log(`${nodeId} ${agentId} ${state}`);
         }
       };
+	  console.log(graphai);
       await graphai.run();
-      // console.log(graphaiResponse);
-      // responseMessage.content = graphaResponse["llm"]["text"];
-      // history.messages[responseMessageId] = graphaResponse["llm"]["text"];
-
       responseMessage.done = true
-      /*
-			const response = await fetch(GRAPHAI_SERVER_URL, {
-			  method: "POST",
-			  headers: {
-				"Content-Type": "text/event-stream",
-			  },
-			  body: JSON.stringify(payload),
-			});
-
-			if (response.ok) {
-				const reader = response.body
-					.pipeThrough(new TextDecoderStream())
-					.pipeThrough(splitStream('\n'))
-					.getReader();
-
-				let lastNodeId = null;
-
-				while (true) {
-					const { value, done } = await reader.read();
-					if (done || stopResponseFlag || _chatId !== $chatId || value.includes('__END__')) {
-						responseMessage.done = true;
-						history.messages[responseMessageId] = responseMessage;
-
-						if (stopResponseFlag) {
-							// Handle stop if needed
-						}
-
-						_response = responseMessage.content;
-
-						break;
-					}
-
-					try {
-						const jsonData = JSON.parse(value);
-						type ResponseObject = Record<string, any>; // General dynamic JSON type
-
-						function findTextAttribute(obj: ResponseObject): string | null {
-							for (const key in obj) {
-							   if (key === "token") {
-								 return obj[key];
-							   } else if (typeof obj[key] === "object" && obj[key] !== null) {
-								 const result = findTextAttribute(obj[key]);
-								 if (result) return result;
-							   }
-							}
-							return null;
-						}
-						  function findNodeIdAttribute(obj: ResponseObject): string | null {
-							   for (const key in obj) {
-								   if (key === "nodeId") {
-										return obj[key];
-								   } else if (typeof obj[key] === "object" && obj[key] !== null) {
-										const result = findNodeIdAttribute(obj[key]);
-										if (result) return result;
-								   }
-							   }
-							   return null;
-						  }
-
-						const text = findTextAttribute(jsonData);
-						const currNode = findNodeIdAttribute(jsonData);
-
-						if (currNode && currNode !== lastNodeId) {
-							 responseMessage.content += '\n\n';
-							 lastNodeId = currNode;
-						}
-						if (text) {
-							responseMessage.content += text;
-						}
-
-						// Update UI with new content
-						if (navigator.vibrate && ($settings?.hapticFeedback ?? false)) {
-							navigator.vibrate(5);
-						}
-
-						const messageContentParts = getMessageContentParts(
-							responseMessage.content,
-							$config?.audio?.tts?.split_on ?? 'punctuation'
-						);
-						messageContentParts.pop();
-
-						// Dispatch event for new content
-						if (
-							messageContentParts.length > 0 &&
-							messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
-						) {
-							responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
-							eventTarget.dispatchEvent(
-								new CustomEvent('chat', {
-									detail: {
-										id: responseMessageId,
-										content: messageContentParts[messageContentParts.length - 1]
-									}
-								})
-							);
-						}
-
-						history.messages[responseMessageId] = responseMessage;
-					} catch (error) {
-						console.error('Error processing response:', error);
-						break;
-					}
-
-					if (autoScroll) {
-						scrollToBottom();
-					}
-				}
-			} else {
-				throw new Error(`API request failed: ${response.statusText}`);
-		  }
-      */
-		} catch (error) {
+	  } catch (error) {
 			console.error('Error:', error);
 			responseMessage.error = {
 				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
@@ -2094,7 +1987,7 @@
 				})
 			};
 			responseMessage.done = true;
-		}
+	  }
 
 		// Save the chat
 		await saveChatHandler(_chatId);

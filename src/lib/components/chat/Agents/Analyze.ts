@@ -59,34 +59,6 @@ export const Analyze = {
         region: "us-west-2"
       }
     },
-    difficultyClassifier: {
-      agent: "s3FileAgent",
-      params: {
-        fileName: "code_cache.txt",
-        bucket: "bp-authoring-files",
-        region: "us-west-2",
-      },
-    },
-    analyzeDifficulty: {
-      agent: ":llmEngine",
-      inputs: {
-        prompt: ":userPrompt",
-        system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
-      },
-      isResult: true
-    },
-    highDifficulty: {
-      agent: "compareAgent",
-      inputs: { array: [":analyzeDifficulty.text", "==", "False"] }
-    },
-    executeCodeEasy: {
-      agent: "pythonCodeAgent",
-      unless: ":highDifficulty",
-      params: {},
-      inputs: {
-        code: ":analyzeDifficulty.text",
-      },
-    },
     metadata: {
       agent: "s3FileAgent",
       params: {
@@ -143,7 +115,7 @@ export const Analyze = {
     },
     codeGenerator: {
       agent: "nestedAgent",
-      if: ":highDifficulty",
+      if: ":checkInput",
       inputs: {
         file: [":csvData"],
         inputs: [],
@@ -246,12 +218,6 @@ export const Analyze = {
         }
       }
     },
-    parsedResultsEasy: {
-      agent: "jsonParserAgent",
-      inputs: {
-        data: ":executeCodeEasy.data"
-      },
-    },
     parsedResults: {
       agent: "jsonParserAgent",
       inputs: {
@@ -260,7 +226,6 @@ export const Analyze = {
     },
     summarizeDataToUser: {
       agent: ":llmEngine",
-      if: ":highDifficulty",
       isResult: true,
       inputs: {
         messages: ":chatHistory",
@@ -270,15 +235,6 @@ export const Analyze = {
 
       console: {
         before: true
-      }
-    },
-    summarizeDataToUserEasy: {
-      agent: ":llmEngine",
-      unless: ":highDifficulty",
-      isResult: true,
-      inputs: {
-        prompt: ":userPrompt",
-        system: ["[Answer: ", ":parsedResultsEasy", "]\n\n", ":chatExplainPrompt.text", "\n\n", "This should be polished for a non-technical user. Give adequate details."]
       }
     }
   },
