@@ -12,6 +12,12 @@ resolution-markers = [
     "(python_full_version >= '3.12.4' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version >= '3.12.4' and platform_system != 'Darwin' and platform_system != 'Linux')",
 ]
 
+[manifest]
+members = [
+    "backend",
+    "open-webui",
+]
+
 [[package]]
 name = "aiocache"
 version = "0.12.3"
@@ -273,6 +279,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/27/08/220d5a1ae7e7830d66d041c71e607c1f5df2e3598b12fb406b0d7c2defa7/av-12.3.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32f3eef56b2df289db6105f9fe2ebc9a8134a8adbd62190daeb8e22c4ff47794", size = 34746451 },
     { url = "https://files.pythonhosted.org/packages/96/67/9f1c444864d4f3e3773100b9ed20e670f80d5575b7a8fd53cca20de9d681/av-12.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:62d036ee8321d67190887012c3dbcd1ad83248603cc29ea75fbb75835b8d6e6e", size = 25977611 },
 ]
+
+[[package]]
+name = "backend"
+version = "0.1.0"
+source = { virtual = "backend" }
 
 [[package]]
 name = "backoff"
