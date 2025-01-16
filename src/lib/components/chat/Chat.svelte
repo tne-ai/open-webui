@@ -142,6 +142,9 @@
 	let files = [];
 	let params = {};
 
+	//Cytograph vairables
+	let cytographVisibleFlag = true;
+
 	$: if (chatIdProp) {
 		(async () => {
 			console.log(chatIdProp);
@@ -1802,6 +1805,10 @@
 		return _response;
 	};
 
+function toggleCytoGraph(){
+	cytographVisibleFlag = !cytographVisibleFlag;
+  }
+
   let graphId = history.graphId ?? "iterativeAnalysis"
   let graphData = graphDataSet[graphId];
   // cytoscape
@@ -1831,6 +1838,7 @@
   function foo(){
 	toggleCytoscape();
   }
+
   // end of cytoscape
 
   const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
@@ -2697,7 +2705,10 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+							<!-- Possibly the cytoscape Container????-->
+							{#if cytographVisibleFlag}
 							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
+							{/if}
 								<Messages
 									chatId={$chatId}
 									bind:history
@@ -2823,6 +2834,7 @@
 		</PaneGroup>
 	</div>
 	<main>
-		<button on:click={() => foo()}>CLICK ME</button>
+		<!--cytoscape toggle button-->
+		<button on:click={() => toggleCytoGraph()}>CLICK ME</button>
 	</main>
 {/if}
