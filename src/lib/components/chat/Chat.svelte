@@ -1823,6 +1823,14 @@
       updateGraphData(graphData);
     }
   }
+
+  //get the funciton from the typescript file
+  const {toggleCytoscape} = useCytoscape();
+
+  //call function from typescript file
+  function foo(){
+	toggleCytoscape();
+  }
   // end of cytoscape
 
   const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
@@ -2615,6 +2623,7 @@
 			? 'md:max-w-[calc(100%-260px)]'
 			: ''} w-full max-w-full flex flex-col"
 		id="chat-container"
+
 	>
 		{#if $settings?.backgroundImageUrl ?? null}
 			<div
@@ -2813,4 +2822,7 @@
 			/>
 		</PaneGroup>
 	</div>
+	<main>
+		<button on:click={() => foo()}>CLICK ME</button>
+	</main>
 {/if}

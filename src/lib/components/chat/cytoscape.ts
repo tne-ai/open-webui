@@ -327,6 +327,19 @@ export const useCytoscape = () => {
       cytoscapeRef = tmp;
     }
   };
+
+  const toggleCytoscape = () => {
+    //if the graph isnt there, make one
+    // if(cy === null)
+    // {
+    //   createCytoscape();
+    // }
+    // else //set the graph = null so it disapears
+    // {
+    //   cy = null;
+    // }
+    console.log("CLICKED BUTTON");
+  };
   
   return {
     setRef,
@@ -334,6 +347,8 @@ export const useCytoscape = () => {
     updateCytoscape,
     resetCytoscape,
     updateGraphData,
+    
+    toggleCytoscape,
     
     zoomingEnabled,
   };
