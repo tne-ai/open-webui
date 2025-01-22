@@ -142,7 +142,7 @@
 	let files = [];
 	let params = {};
 
-	//Cytograph vairables
+	//Cytograph variable to enable graph toggeling button
 	let cytographVisibleFlag = true;
 
 	$: if (chatIdProp) {
@@ -1821,34 +1821,25 @@
     setRef(cytoscapeRef);
     createCytoscape();
   }
-  console.log("HELLO");
 
   $: if (history.graphId) {
-	console.log("RUNNING RANDOM");
     if (graphId !== history.graphId) {
       graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
       updateGraphData(graphData);
     }
   }
 
+  //function for button graph toggeling 
   function toggleCytoGraph(){
 	cytographVisibleFlag = !cytographVisibleFlag;
 
 	if(cytographVisibleFlag == false)
 	{
 		console.log("GRAPH TURNED OFF");
-		//const { toggleCytoGraph } = useCytoscape();
-		toggleCytoscape();
 	}
 	else
 	{
 		console.log("GRAPH TURNED BACK ON");
-		//history.graphId = tempGraphID;
-		// if (graphId !== history.graphId) {
-		// graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
-		// updateGraphData(graphData);
-    	// }
-
 	}
   }
 
@@ -2718,8 +2709,8 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+								<!--Cytograph container, class:hidden for toggeling-->
 								<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} class:hidden={!cytographVisibleFlag}></div>
-							<!-- Possibly the cytoscape Container????-->
 								<Messages
 									chatId={$chatId}
 									bind:history
