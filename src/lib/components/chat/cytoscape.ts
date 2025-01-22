@@ -119,6 +119,7 @@ export const dataSourceNodeIds = (sources: DataSource[]): string[] => {
   return sources.filter((source: DataSource) => source.nodeId).map((source) => source.nodeId!);
 };
 
+//called in toGraph()
 const node2cyNode = (node: NodeData, nodeId: string) => {
   const isStatic = !("agent" in node);
   const cyNode = {
@@ -131,6 +132,7 @@ const node2cyNode = (node: NodeData, nodeId: string) => {
   return cyNode;
 };
 
+//called in toGraph()
 const node2cyEdge = (node: NodeData, nodeId: string) => {
   const edges: EdgeDefinition[] = [];
   if ("inputs" in node) {
@@ -167,6 +169,7 @@ const node2cyEdge = (node: NodeData, nodeId: string) => {
   return edges;
 };
 
+//called in updateGraphData()
 const cytoscapeFromGraph = (_graph_data: GraphData) => {
   const elements: {
     nodes: NodeDefinition[];
@@ -262,8 +265,11 @@ export const useCytoscape = () => {
     }
   };
 
+  //think this creates box to drag around and holds actual graph 
   const createCytoscape = () => {
+    console.log("IN CREATECTYOSCAPE");
     if (cy === null) {
+      console.log("INSIDE IF IN CREATE CYTOSCAPE");
       try {
         cy = cytoscape({
           container: cytoscapeRef,
@@ -280,7 +286,9 @@ export const useCytoscape = () => {
     }
   };
   const updateGraphData = async (graphData) => {
+    console.log("INSIDE UPDATEGRAPHDATA");
     if (selectedGraph.version) {
+      console.log("INSIDE UPDATEGRAPHDATA IF STATEMENT");
       if (!selectedGraph.nodes["graphGenerator"]) {
         resetCytoscape();
       }
@@ -323,22 +331,18 @@ export const useCytoscape = () => {
   };
 
   const setRef = (tmp) => {
+    console.log("IN SETREF");
     if (cytoscapeRef === null) {
+      console.log("INSIDE IF IN SETREF");
       cytoscapeRef = tmp;
     }
   };
 
+  //delete cytoscaperef and cy so that it can create new ones
   const toggleCytoscape = () => {
-    //if the graph isnt there, make one
-    // if(cy === null)
-    // {
-    //   createCytoscape();
-    // }
-    // else //set the graph = null so it disapears
-    // {
-    //   cy = null;
-    // }
-    console.log("CLICKED BUTTON");
+    console.log("IN TOGGLE CYTOSCAPE");
+    cytoscapeRef = null;
+    cy = null;
   };
   
   return {

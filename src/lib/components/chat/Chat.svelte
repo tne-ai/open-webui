@@ -1804,11 +1804,7 @@
 
 		return _response;
 	};
-
-function toggleCytoGraph(){
-	cytographVisibleFlag = !cytographVisibleFlag;
-  }
-
+  let tempGraphID = history.graphId;
   let graphId = history.graphId ?? "iterativeAnalysis"
   let graphData = graphDataSet[graphId];
   // cytoscape
@@ -1818,25 +1814,42 @@ function toggleCytoGraph(){
     createCytoscape,
     updateCytoscape,
     updateGraphData,
+	toggleCytoscape,
   } = useCytoscape();
 
   $: if (cytoscapeRef) {
     setRef(cytoscapeRef);
     createCytoscape();
   }
+  console.log("HELLO");
+
   $: if (history.graphId) {
+	console.log("RUNNING RANDOM");
     if (graphId !== history.graphId) {
       graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
       updateGraphData(graphData);
     }
   }
 
-  //get the funciton from the typescript file
-  const {toggleCytoscape} = useCytoscape();
+  function toggleCytoGraph(){
+	cytographVisibleFlag = !cytographVisibleFlag;
 
-  //call function from typescript file
-  function foo(){
-	toggleCytoscape();
+	if(cytographVisibleFlag == false)
+	{
+		console.log("GRAPH TURNED OFF");
+		//const { toggleCytoGraph } = useCytoscape();
+		toggleCytoscape();
+	}
+	else
+	{
+		console.log("GRAPH TURNED BACK ON");
+		//history.graphId = tempGraphID;
+		// if (graphId !== history.graphId) {
+		// graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
+		// updateGraphData(graphData);
+    	// }
+
+	}
   }
 
   // end of cytoscape
@@ -2705,10 +2718,8 @@ function toggleCytoGraph(){
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+								<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} class:hidden={!cytographVisibleFlag}></div>
 							<!-- Possibly the cytoscape Container????-->
-							{#if cytographVisibleFlag}
-							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
-							{/if}
 								<Messages
 									chatId={$chatId}
 									bind:history
@@ -2725,6 +2736,7 @@ function toggleCytoGraph(){
 									bottomPadding={files.length > 0}
 								/>
 							</div>
+							
 						</div>
 
 						<div class=" pb-[1rem]">
