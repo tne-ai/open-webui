@@ -2708,8 +2708,8 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
-								<!--Cytograph container, class:hidden for toggeling-->
-								<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} class:hidden={!cytographVisibleFlag}></div>
+								<!--Cytograph container, hidden for toggeling-->
+								<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} hidden={!cytographVisibleFlag}></div>
 								<Messages
 									chatId={$chatId}
 									bind:history
