@@ -1814,7 +1814,6 @@
     createCytoscape,
     updateCytoscape,
     updateGraphData,
-	toggleCytoscape,
   } = useCytoscape();
 
   $: if (cytoscapeRef) {
