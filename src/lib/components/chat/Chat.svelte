@@ -1867,7 +1867,6 @@
 		}
 
 		return _response;
-	};
 
 	const sendPromptBP_RUNNER = async (model, userPrompt, responseMessageId, _chatId) => {
 		let _response: string | null = null;
@@ -2043,7 +2042,6 @@
 	};
 
 	const handleOpenAIError = async (error, res: Response | null, model, responseMessage) => {
->>>>>>> 30ce45f66 (Route chat requests to bp-runner for models that contain "tne" (#9))
 		let errorMessage = '';
 		let innerError;
 
