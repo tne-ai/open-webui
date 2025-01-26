@@ -47,7 +47,6 @@
 	import * as graphDataSet from './Agents';
 
 	const i18n = getContext('i18n');
-	const graphNames = Object.keys(graphDataSet);
 
 	export let transparentBackground = false;
 
@@ -99,6 +98,7 @@
 
 	let user = null;
 	export let placeholder = '';
+
 
 	let visionCapableModels = [];
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(

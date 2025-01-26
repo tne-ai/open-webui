@@ -14,6 +14,10 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
+	import * as graphDataSet from './Agents';
+  	import { useCytoscape } from './cytoscape';
+	import { selectedGraph } from '../../stores/index'
+
 	import {
 		chatId,
 		chats,
@@ -124,7 +128,8 @@
 
 	let history = {
 		messages: {},
-		currentId: null
+		currentId: null,
+		graphId: '',
 	};
 
 	let taskId = null;
@@ -135,13 +140,37 @@
 	let files = [];
 	let params = {};
 
+	// GraphAI
+  	let graphId = $selectedGraph || "Chat"
+  	let graphData = graphDataSet[graphId];
+
+  	// cytoscape
+  	let cytoscapeRef = null;
+  	let {
+    	setRef,
+    	createCytoscape,
+    	updateCytoscape,
+    	updateGraphData,
+  	} = useCytoscape();
+
+  	$: if (cytoscapeRef) {
+    	setRef(cytoscapeRef);
+    	createCytoscape();
+  	}
+
+  	$: if ($selectedGraph) {
+    	if (graphId !== $selectedGraph) {
+      		graphData = graphDataSet[$selectedGraph ?? "Chat"];
+      		updateGraphData(graphData);
+    	}
+  	}
+
 	$: if (chatIdProp) {
 		(async () => {
 			loading = true;
 			console.log(chatIdProp);
 
-			prompt = '';
-			files = [];
+			prompt = ''; files = [];
 			selectedToolIds = [];
 			webSearchEnabled = false;
 			imageGenerationEnabled = false;

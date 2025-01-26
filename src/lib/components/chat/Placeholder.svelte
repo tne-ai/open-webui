@@ -2,7 +2,6 @@
 	import { toast } from 'svelte-sonner';
 	import { marked } from 'marked';
 	import { selectedGraph } from '../../stores/index';
-	import { get } from 'svelte/store';
 
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
 	import { blur, fade } from 'svelte/transition';
@@ -18,7 +17,7 @@
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import MessageInput from './MessageInput.svelte';
 
-  import * as graphDataSet from './Agents';
+	import * as graphDataSet from "./Agents";
 
 	const i18n = getContext('i18n');
 
@@ -42,7 +41,7 @@
 	export let codeInterpreterEnabled = false;
 	export let webSearchEnabled = false;
 
-  	const graphNames = Object.keys(graphDataSet);
+	const graphNames = Object.keys(graphDataSet);
 
 	let models = [];
 
@@ -150,6 +149,7 @@
 					{/if}
 				</div>
 			</div>
+
 			<div class="flex mt-1 mb-2">
 				<div in:fade={{ duration: 100, delay: 50 }}>
 					{#if models[selectedModelIdx]?.info?.meta?.description ?? null}
@@ -204,24 +204,17 @@
 					{transparentBackground}
 					{stopResponse}
 					{createMessagePair}
-					{graphNames}
 					placeholder={$i18n.t('How can I help you today?')}
 					on:upload={(e) => {
 						dispatch('upload', e.detail);
-					  }}
-					  on:submit={(e) => {
-						console.log('placeholder output', get(selectedGraph));
-						console.log('Event detail:', e.detail);
-						dispatch('submit', {
-						  prompt: e.detail, 
-						  graphId: get(selectedGraph)  // Pass the selectedGraph in submit
-						});
-					  }}
+					}}
+					on:submit={(e) => {
+						dispatch('submit', e.detail );
+					}}
 				/>
 			</div>
 		</div>
 	</div>
-
 	<div class="mx-auto max-w-2xl font-primary" in:fade={{ duration: 200, delay: 200 }}>
 		<div class="mx-5">
 			<Suggestions
