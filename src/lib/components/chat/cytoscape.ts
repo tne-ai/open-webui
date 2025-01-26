@@ -2,6 +2,7 @@ import { onMount } from "svelte";
 import type { GraphData, NodeData } from "graphai";
 import { NodeState, sleep, isObject } from "graphai";
 import type { DataSource } from "graphai/lib/type";
+import { selectedGraph } from '../../stores/index'
 
 import cytoscape from "cytoscape";
 import type { Core, NodeSingular, NodeDefinition, EdgeDefinition, EdgeSingular, Position, EdgeDataDefinition } from "cytoscape";
@@ -312,6 +313,7 @@ export const useCytoscape = () => {
   };
 
   const resetCytoscape = () => {
+    console.log(selectedGraph);
     const elements = cytoscapeData.elements;
     Object.keys(elements.map).forEach((nodeId) => {
       const nodeData = selectedGraph.nodes[nodeId];
