@@ -14,9 +14,6 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
-  import * as graphDataSet from './Agents';
-  import { useCytoscape } from './cytoscape';
-
 	import {
 		chatId,
 		chats,
@@ -86,18 +83,7 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 
-  import { GraphAI } from "graphai";
-  import * as agents from "@graphai/vanilla";
-  import { openAIAgent } from "@graphai/openai_agent";
-  import { anthropicAgent } from "@graphai/anthropic_agent";
-  import { fetchAgent, wikipediaAgent } from "@graphai/service_agents";
-  import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
-  import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
-  import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
-
-	const GRAPHAI_SERVER_URL = "http://localhost:8085/graph/run";
 	export let chatIdProp = '';
-
 
 	let loaded = false;
 	const eventTarget = new EventTarget();
@@ -134,8 +120,7 @@
 
 	let history = {
 		messages: {},
-		currentId: null,
-		graphId: '',
+		currentId: null
 	};
 
 	let taskId = null;
@@ -1457,18 +1442,6 @@
 
 					scrollToBottom();
 					await sendPromptSocket(model, responseMessageId, _chatId);
-					if (webSearchEnabled) {
-						await getWebSearchResults(model.id, parentId, responseMessageId);
-					}
-
-					let _response = null;
-					if (model?.id.includes('anthropic')) {
-						_response = await sendPromptGraphAI(model, "anthropicAgent", prompt, responseMessageId, _chatId);
-					}
-					else {
-						_response = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
-					}
-					_responses.push(_response);
 
 					if (chatEventEmitter) clearInterval(chatEventEmitter);
 				} else {
@@ -1636,412 +1609,7 @@
 		scrollToBottom();
 	};
 
-  let graphId = history.graphId ?? "iterativeAnalysis"
-  let graphData = graphDataSet[graphId];
-  // cytoscape
-  let cytoscapeRef = null;
-  let {
-    setRef,
-    createCytoscape,
-    updateCytoscape,
-    updateGraphData,
-  } = useCytoscape();
-
-  $: if (cytoscapeRef) {
-    setRef(cytoscapeRef);
-    createCytoscape();
-  }
-  $: if (history.graphId) {
-    if (graphId !== history.graphId) {
-      graphData = graphDataSet[history.graphId ?? "iterativeAnalysis"];
-      updateGraphData(graphData);
-    }
-  }
-  // end of cytoscape
-
-  const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
-		let _response: string | null = null;
-
-		const responseMessage = history.messages[responseMessageId];
-		const userMessage = history.messages[responseMessage.parentId];
-		await tick();
-
-		// Scroll down
-		scrollToBottom();
-
-		try {
-			const messagesBody = [
-				params?.system || $settings.system || (responseMessage?.userContext ?? null)
-					? {
-						role: 'system',
-						content: `${promptTemplate(
-							params?.system ?? $settings?.system ?? '',
-							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token)
-								: undefined
-						)}${
-							(responseMessage?.userContext ?? null)
-								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-								: ''
-						}`
-					}
-					: undefined,
-				...createMessagesList(responseMessageId)
-			].filter(message => message?.content?.trim());
-
-			// Dispatch start event
-			eventTarget.dispatchEvent(
-				new CustomEvent('chat:start', {
-					detail: {
-						id: responseMessageId
-					}
-				})
-			);
-
-	  let lastNodeId: string | null = null;
-      const outsideFunction = (context: AgentFunctionContext, token: string) => {
-	    if (context.debugInfo.nodeId !== lastNodeId && lastNodeId !== null) {
-			responseMessage.content = (responseMessage.content ?? "") + "\n\n" + token;
-		} else {
-			responseMessage.content = (responseMessage.content ?? "") + token;
-		}
-		lastNodeId = context.debugInfo.nodeId;
-	    const messageContentParts = getMessageContentParts(
-			responseMessage.content,
-			$config?.audio?.tts?.split_on ?? 'punctuation'
-		);
-	    messageContentParts.pop();
-	    if (
-			messageContentParts.length > 0 &&
-			messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
-	  	) {
-		   responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
-		   eventTarget.dispatchEvent(
-				new CustomEvent('chat', {
-					  detail: {
-						  id: responseMessageId,
-						  content: messageContentParts[messageContentParts.length - 1]
-					  }
-				})
-		   );
-	  	}
-	    history.messages[responseMessageId] = responseMessage;
-      };
-      const streamAgentFilter = streamAgentFilterGenerator<string>(outsideFunction);
-      // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
-      const serverAgents = [];
-      const agentFilters = [
-        {
-          name: "streamAgentFilter",
-          agent: streamAgentFilter,
-        },
-        {
-          name: "httpAgentFilter",
-          agent: httpAgentFilter,
-          filterParams: {
-            server: {
-              baseUrl: "http://localhost:8085/agents",
-            },
-          },
-          agentIds: serverAgents,
-        }];
-      const s3Credentials = {
-        accessKeyId: import.meta.env.VITE_AWS_KEY,
-        secretAccessKey: import.meta.env.VITE_AWS_SECRET,
-      };
-
-	  let modelToInject: string;
-	  if (model.id.includes('tne')) {
-		   modelToInject = 'gpt-4o';
-	  } else {
-		   modelToInject = model.id;
-	  }
-
-	  let openAIBaseURL: string;
-	  if (model?.owned_by === 'ollama') {
-		  openAIBaseURL = "http://127.0.0.1:11434/v1";
-	  } else {
-		  openAIBaseURL = "https://api.openai.com/v1";
-	  }
-
-      const config = {
-        global: {
-          uid: "london-demo-1-13",
-        },
-        pythonCodeAgent: { python_runner_server: "http://0.0.0.0:8080" },
-        s3FileAgent: { credentials: s3Credentials },
-        codeGenerationTemplateAgent: { credentials: s3Credentials },
-        openAIAgent: {
-          forWeb: true,
-          apiKey: import.meta.env.VITE_OPEN_API_KEY,
-          stream: true,
-		  baseURL: openAIBaseURL,
-		  model: modelToInject
-        },
-        anthropicAgent: {
-          forWeb: true,
-          apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-          stream: true,
-        },
-      };
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, fetchAgent, wikipediaAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
-      const messages = (messagesBody ?? []).map(message => {
-        const { role, content } = message;
-        return { role, content };
-      });
-	  if (graphai.nodes["modelName"]) {
-		  graphai.injectValue("modelName", modelToInject);
-	  }
-	  if (graphai.nodes["chatHistory"]) {
-		  graphai.injectValue("chatHistory", messages);
-	  }
-      if (graphai.nodes["llmEngine"]) {
-	      graphai.injectValue("llmEngine", llmEngine);
-      }
-	  if (graphai.nodes["userPrompt"]) {
-	      graphai.injectValue("userPrompt", userMessage.content);
-      }
-      graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
-        updateCytoscape(nodeId, state);
-        if (result) {
-          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
-        } else {
-          console.log(`${nodeId} ${agentId} ${state}`);
-        }
-      };
-	  console.log(graphai);
-      await graphai.run();
-      responseMessage.done = true
-	  } catch (error) {
-			console.error('Error:', error);
-			responseMessage.error = {
-				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
-					provider: 'GraphAI'
-				})
-			};
-			responseMessage.done = true;
-		}
-	  }
-		// Save the chat
-		await saveChatHandler(_chatId);
-		history.messages[responseMessageId] = responseMessage;
-
-		// Handle chat completion
-		await chatCompletedHandler(
-			_chatId,
-			model.id,
-			responseMessageId,
-			createMessagesList(responseMessageId)
-		);
-
-		stopResponseFlag = false;
-		await tick();
-
-		// Send final events
-		let lastMessageContentPart =
-			getMessageContentParts(
-				responseMessage.content,
-				$config?.audio?.tts?.split_on ?? 'punctuation'
-			)?.at(-1) ?? '';
-		if (lastMessageContentPart) {
-			eventTarget.dispatchEvent(
-				new CustomEvent('chat', {
-					detail: { id: responseMessageId, content: lastMessageContentPart }
-				})
-			);
-		}
-
-		eventTarget.dispatchEvent(
-			new CustomEvent('chat:finish', {
-				detail: {
-					id: responseMessageId,
-					content: responseMessage.content
-				}
-			})
-		);
-
-		// Final scroll
-		if (autoScroll) {
-			scrollToBottom();
-		}
-
-		return _response;
-
-	const sendPromptBP_RUNNER = async (model, userPrompt, responseMessageId, _chatId) => {
-		let _response: string | null = null;
-
-		const responseMessage = history.messages[responseMessageId];
-		const userMessage = history.messages[responseMessage.parentId];
-		await tick();
-
-		// Scroll down
-		scrollToBottom();
-
-		try {
-			const messagesBody = [
-				params?.system || $settings.system || (responseMessage?.userContext ?? null)
-					? {
-						role: 'system',
-						content: `${promptTemplate(
-							params?.system ?? $settings?.system ?? '',
-							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token)
-								: undefined
-						)}${
-							(responseMessage?.userContext ?? null)
-								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-								: ''
-						}`
-					}
-					: undefined,
-				...createMessagesList(responseMessageId)
-			].filter(message => message?.content?.trim());
-
-			// Dispatch start event
-			eventTarget.dispatchEvent(
-				new CustomEvent('chat:start', {
-					detail: {
-						id: responseMessageId
-					}
-				})
-			);
-
-			// Make the API call
-			const response = await fetch('http://localhost:8080/infer', {
-				method: 'POST',
-				headers: {
-					"accept": "application/json",
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					text: userMessage.content,
-					uid: "google-oauth|114520153332760575553"
-				})
-			});
-
-			if (response.ok) {
-				const reader = response.body
-					.pipeThrough(new TextDecoderStream())
-					.pipeThrough(splitStream('\n'))
-					.getReader();
-
-				while (true) {
-					const { value, done } = await reader.read();
-					if (done || stopResponseFlag || _chatId !== $chatId) {
-						responseMessage.done = true;
-						history.messages[responseMessageId] = responseMessage;
-
-						if (stopResponseFlag) {
-							// Handle stop if needed
-						}
-
-						_response = responseMessage.content;
-						break;
-					}
-
-					try {
-						// Handle the streaming response
-						responseMessage.content += value;
-
-						// Update UI with new content
-						if (navigator.vibrate && ($settings?.hapticFeedback ?? false)) {
-							navigator.vibrate(5);
-						}
-
-						const messageContentParts = getMessageContentParts(
-							responseMessage.content,
-							$config?.audio?.tts?.split_on ?? 'punctuation'
-						);
-						messageContentParts.pop();
-
-						// Dispatch event for new content
-						if (
-							messageContentParts.length > 0 &&
-							messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
-						) {
-							responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
-							eventTarget.dispatchEvent(
-								new CustomEvent('chat', {
-									detail: {
-										id: responseMessageId,
-										content: messageContentParts[messageContentParts.length - 1]
-									}
-								})
-							);
-						}
-
-						history.messages[responseMessageId] = responseMessage;
-					} catch (error) {
-						console.error('Error processing response:', error);
-						break;
-					}
-
-					if (autoScroll) {
-						scrollToBottom();
-					}
-				}
-			} else {
-				throw new Error(`API request failed: ${response.statusText}`);
-			}
-		} catch (error) {
-			console.error('Error:', error);
-			responseMessage.error = {
-				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
-					provider: 'GraphAI'
-				})
-			};
-			responseMessage.done = true;
-		}
-
-		// Save the chat
-		await saveChatHandler(_chatId);
-		history.messages[responseMessageId] = responseMessage;
-
-		// Handle chat completion
-		await chatCompletedHandler(
-			_chatId,
-			model.id,
-			responseMessageId,
-			createMessagesList(responseMessageId)
-		);
-
-		stopResponseFlag = false;
-		await tick();
-
-		// Send final events
-		let lastMessageContentPart =
-			getMessageContentParts(
-				responseMessage.content,
-				$config?.audio?.tts?.split_on ?? 'punctuation'
-			)?.at(-1) ?? '';
-		if (lastMessageContentPart) {
-			eventTarget.dispatchEvent(
-				new CustomEvent('chat', {
-					detail: { id: responseMessageId, content: lastMessageContentPart }
-				})
-			);
-		}
-
-		eventTarget.dispatchEvent(
-			new CustomEvent('chat:finish', {
-				detail: {
-					id: responseMessageId,
-					content: responseMessage.content
-				}
-			})
-		);
-
-		// Final scroll
-		if (autoScroll) {
-			scrollToBottom();
-		}
-
-		return _response;
-	};
-
-	const handleOpenAIError = async (error, res: Response | null, model, responseMessage) => {
+	const handleOpenAIError = async (error, responseMessage) => {
 		let errorMessage = '';
 		let innerError;
 
@@ -2366,7 +1934,6 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
-							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
 								<Messages
 									chatId={$chatId}
 									bind:history
@@ -2461,16 +2028,12 @@
 									}
 								}}
 								on:submit={async (e) => {
-                  if (e.detail) {
-					console.log(e.detail);
-                    const { prompt, graphId } = e.detail;
-                    history.graphId = graphId;
-                    console.log(prompt, graphId);
+									if (e.detail) {
 										await tick();
 										submitPrompt(
 											($settings?.richTextInput ?? true)
-												? prompt.replaceAll('\n\n', '\n')
-												: prompt
+												? e.detail.replaceAll('\n\n', '\n')
+												: e.detail
 										);
 									}
 								}}
