@@ -125,7 +125,6 @@
 	let history = {
 		messages: {},
 		currentId: null,
-		graphId: '',
 	};
 
 	let taskId = null;
@@ -137,8 +136,15 @@
 	let params = {};
 
 	// GraphAI
-  	let graphId = $selectedGraph || "Chat"
-  	let graphData = graphDataSet[graphId];
+	let currentGraph;
+	selectedGraph.subscribe(value => {
+		currentGraph = value; // This will be reactive
+	});
+	let graphId;
+	$: graphId = currentGraph || null; // Set graphId to currentGraph or null
+
+  	let graphData;
+	$: graphData = graphId ? graphDataSet[graphId] : null;
 
   	// cytoscape
   	let cytoscapeRef = null;
@@ -154,11 +160,9 @@
     	createCytoscape();
   	}
 
-  	$: if ($selectedGraph) {
-    	if (graphId !== $selectedGraph) {
-      		graphData = graphDataSet[$selectedGraph ?? "Chat"];
-      		updateGraphData(graphData);
-    	}
+  	$: if ($selectedGraph && graphId !== $selectedGraph) {
+		graphData = graphDataSet[$selectedGraph] || null;
+		updateGraphData(graphData);
   	}
 
 	$: if (chatIdProp) {
@@ -1562,6 +1566,14 @@
 							content: message?.merged?.content ?? message.content
 						})
 			}));
+
+
+		if (graphId) {
+			console.log("GRAPHAI GRAPH SELECTED");
+			console.log(graphId);
+		} else {
+			console.log("NO GRAPHAI GRAPH SELECTED");
+		}
 
 		const res = await generateOpenAIChatCompletion(
 			localStorage.token,
