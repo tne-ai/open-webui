@@ -87,6 +87,15 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 
+  	import { GraphAI } from "graphai";
+  	import * as agents from "@graphai/vanilla";
+  	import { openAIAgent } from "@graphai/openai_agent";
+  	import { anthropicAgent } from "@graphai/anthropic_agent";
+  	import { fetchAgent, wikipediaAgent } from "@graphai/service_agents";
+  	import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
+  	import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
+  	import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
+
 	export let chatIdProp = '';
 
 	let loaded = false;
@@ -141,13 +150,14 @@
 		currentGraph = value; // This will be reactive
 	});
 	let graphId;
-	$: graphId = currentGraph || null; // Set graphId to currentGraph or null
+	$: graphId = currentGraph || null;
 
   	let graphData;
 	$: graphData = graphId ? graphDataSet[graphId] : null;
 
-  	// cytoscape
+  	// cytoscape (disabled for now)
   	let cytoscapeRef = null;
+	/*
   	let {
     	setRef,
     	createCytoscape,
@@ -160,10 +170,10 @@
     	createCytoscape();
   	}
 
-  	$: if ($selectedGraph && graphId !== $selectedGraph) {
-		graphData = graphDataSet[$selectedGraph] || null;
+  	$: if (graphData) {
 		updateGraphData(graphData);
   	}
+	*/
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -1485,6 +1495,213 @@
 		currentChatPage.set(1);
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	};
+	const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
+		let _response: string | null = null;
+
+		const responseMessage = history.messages[responseMessageId];
+		const userMessage = history.messages[responseMessage.parentId];
+		await tick();
+
+		// Scroll down
+		scrollToBottom();
+
+		try {
+			const messagesBody = [
+				params?.system || $settings.system || (responseMessage?.userContext ?? null)
+					? {
+						role: 'system',
+						content: `${promptTemplate(
+							params?.system ?? $settings?.system ?? '',
+							$user.name,
+							$settings?.userLocation
+								? await getAndUpdateUserLocation(localStorage.token)
+								: undefined
+						)}${
+							(responseMessage?.userContext ?? null)
+								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+								: ''
+						}`
+					}
+					: undefined,
+				...createMessagesList(responseMessageId)
+			].filter(message => message?.content?.trim());
+
+			// Dispatch start event
+			eventTarget.dispatchEvent(
+				new CustomEvent('chat:start', {
+					detail: {
+						id: responseMessageId
+					}
+				})
+			);
+
+	  let lastNodeId: string | null = null;
+      const outsideFunction = (context: AgentFunctionContext, token: string) => {
+	    if (context.debugInfo.nodeId !== lastNodeId && lastNodeId !== null) {
+			responseMessage.content = (responseMessage.content ?? "") + "\n\n" + token;
+		} else {
+			responseMessage.content = (responseMessage.content ?? "") + token;
+		}
+		lastNodeId = context.debugInfo.nodeId;
+	    const messageContentParts = getMessageContentParts(
+			responseMessage.content,
+			$config?.audio?.tts?.split_on ?? 'punctuation'
+		);
+	    messageContentParts.pop();
+	    if (
+			messageContentParts.length > 0 &&
+			messageContentParts[messageContentParts.length - 1] !== responseMessage.lastSentence
+	  	) {
+		   responseMessage.lastSentence = messageContentParts[messageContentParts.length - 1];
+		   eventTarget.dispatchEvent(
+				new CustomEvent('chat', {
+					  detail: {
+						  id: responseMessageId,
+						  content: messageContentParts[messageContentParts.length - 1]
+					  }
+				})
+		   );
+	  	}
+	    history.messages[responseMessageId] = responseMessage;
+      };
+      const streamAgentFilter = streamAgentFilterGenerator<string>(outsideFunction);
+      // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
+      const serverAgents = [];
+      const agentFilters = [
+        {
+          name: "streamAgentFilter",
+          agent: streamAgentFilter,
+        },
+        {
+          name: "httpAgentFilter",
+          agent: httpAgentFilter,
+          filterParams: {
+            server: {
+              baseUrl: "http://localhost:8085/agents",
+            },
+          },
+          agentIds: serverAgents,
+        }];
+      const s3Credentials = {
+        accessKeyId: import.meta.env.VITE_AWS_KEY,
+        secretAccessKey: import.meta.env.VITE_AWS_SECRET,
+      };
+
+	  let modelToInject: string;
+	  if (model.id.includes('tne')) {
+		   modelToInject = 'gpt-4o';
+	  } else {
+		   modelToInject = model.id;
+	  }
+
+	  let openAIBaseURL: string;
+	  if (model?.owned_by === 'ollama') {
+		  openAIBaseURL = "http://127.0.0.1:11434/v1";
+	  } else {
+		  openAIBaseURL = "https://api.openai.com/v1";
+	  }
+
+      const config = {
+        global: {
+          uid: "london-demo-1-13",
+        },
+        pythonCodeAgent: { python_runner_server: "http://0.0.0.0:8080" },
+        s3FileAgent: { credentials: s3Credentials },
+        codeGenerationTemplateAgent: { credentials: s3Credentials },
+        openAIAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_OPEN_API_KEY,
+          stream: true,
+		  baseURL: openAIBaseURL,
+		  model: modelToInject
+        },
+        anthropicAgent: {
+          forWeb: true,
+          apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+          stream: true,
+        },
+      };
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, fetchAgent, wikipediaAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+      const messages = (messagesBody ?? []).map(message => {
+        const { role, content } = message;
+        return { role, content };
+      });
+	  if (graphai.nodes["modelName"]) {
+		  graphai.injectValue("modelName", modelToInject);
+	  }
+	  if (graphai.nodes["chatHistory"]) {
+		  graphai.injectValue("chatHistory", messages);
+	  }
+      if (graphai.nodes["llmEngine"]) {
+	      graphai.injectValue("llmEngine", llmEngine);
+      }
+	  if (graphai.nodes["userPrompt"]) {
+	      graphai.injectValue("userPrompt", userMessage.content);
+      }
+      graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
+        // updateCytoscape(nodeId, state);
+        if (result) {
+          console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
+        } else {
+          console.log(`${nodeId} ${agentId} ${state}`);
+        }
+      };
+      await graphai.run();
+      responseMessage.done = true
+	  } catch (error) {
+			console.error('Error:', error);
+			responseMessage.error = {
+				content: $i18n.t(`Uh-oh! There was an issue connecting to {{provider}}.`, {
+					provider: 'GraphAI'
+				})
+			};
+			responseMessage.done = true;
+	  }
+
+		// Save the chat
+		await saveChatHandler(_chatId);
+		history.messages[responseMessageId] = responseMessage;
+
+		// Handle chat completion
+		await chatCompletedHandler(
+			_chatId,
+			model.id,
+			responseMessageId,
+			createMessagesList(responseMessageId)
+		);
+
+		await tick();
+
+		// Send final events
+		let lastMessageContentPart =
+			getMessageContentParts(
+				responseMessage.content,
+				$config?.audio?.tts?.split_on ?? 'punctuation'
+			)?.at(-1) ?? '';
+		if (lastMessageContentPart) {
+			eventTarget.dispatchEvent(
+				new CustomEvent('chat', {
+					detail: { id: responseMessageId, content: lastMessageContentPart }
+				})
+			);
+		}
+
+		eventTarget.dispatchEvent(
+			new CustomEvent('chat:finish', {
+				detail: {
+					id: responseMessageId,
+					content: responseMessage.content
+				}
+			})
+		);
+
+		// Final scroll
+		if (autoScroll) {
+			scrollToBottom();
+		}
+
+		return _response;
+	};
 
 	const sendPromptSocket = async (model, responseMessageId, _chatId) => {
 		const responseMessage = history.messages[responseMessageId];
@@ -1568,85 +1785,85 @@
 			}));
 
 
-		if (graphId) {
-			console.log("GRAPHAI GRAPH SELECTED");
-			console.log(graphId);
+		if (!graphId) {
+			const res = await generateOpenAIChatCompletion(
+					localStorage.token,
+					{
+						stream: stream,
+						model: model.id,
+						messages: messages,
+						params: {
+							...$settings?.params,
+							...params,
+
+							format: $settings.requestFormat ?? undefined,
+							keep_alive: $settings.keepAlive ?? undefined,
+							stop:
+									(params?.stop ?? $settings?.params?.stop ?? undefined)
+											? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
+													(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
+											)
+											: undefined
+						},
+
+						files: (files?.length ?? 0) > 0 ? files : undefined,
+						tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
+						features: {
+							image_generation: imageGenerationEnabled,
+							web_search: webSearchEnabled
+						},
+
+						session_id: $socket?.id,
+						chat_id: $chatId,
+						id: responseMessageId,
+
+						...(!$temporaryChatEnabled &&
+						(messages.length == 1 ||
+								(messages.length == 2 &&
+										messages.at(0)?.role === 'system' &&
+										messages.at(1)?.role === 'user')) &&
+						selectedModels[0] === model.id
+								? {
+									background_tasks: {
+										title_generation: $settings?.title?.auto ?? true,
+										tags_generation: $settings?.autoTags ?? true
+									}
+								}
+								: {}),
+
+						...(stream && (model.info?.meta?.capabilities?.usage ?? false)
+								? {
+									stream_options: {
+										include_usage: true
+									}
+								}
+								: {})
+					},
+					`${WEBUI_BASE_URL}/api`
+			).catch((error) => {
+				console.log(error);
+				responseMessage.error = {
+					content: error
+				};
+				responseMessage.done = true;
+				history.messages[responseMessageId] = responseMessage;
+				return null;
+			});
+
+			console.log(res);
+
+			if (res) {
+				taskId = res.task_id;
+			}
+
+			await tick();
+			scrollToBottom();
 		} else {
-			console.log("NO GRAPHAI GRAPH SELECTED");
+			const res = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
+			if (res) {
+				taskId = res.task_id;
+			}
 		}
-
-		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				stream: stream,
-				model: model.id,
-				messages: messages,
-				params: {
-					...$settings?.params,
-					...params,
-
-					format: $settings.requestFormat ?? undefined,
-					keep_alive: $settings.keepAlive ?? undefined,
-					stop:
-						(params?.stop ?? $settings?.params?.stop ?? undefined)
-							? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
-									(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
-								)
-							: undefined
-				},
-
-				files: (files?.length ?? 0) > 0 ? files : undefined,
-				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
-				features: {
-					image_generation: imageGenerationEnabled,
-					web_search: webSearchEnabled
-				},
-
-				session_id: $socket?.id,
-				chat_id: $chatId,
-				id: responseMessageId,
-
-				...(!$temporaryChatEnabled &&
-				(messages.length == 1 ||
-					(messages.length == 2 &&
-						messages.at(0)?.role === 'system' &&
-						messages.at(1)?.role === 'user')) &&
-				selectedModels[0] === model.id
-					? {
-							background_tasks: {
-								title_generation: $settings?.title?.auto ?? true,
-								tags_generation: $settings?.autoTags ?? true
-							}
-						}
-					: {}),
-
-				...(stream && (model.info?.meta?.capabilities?.usage ?? false)
-					? {
-							stream_options: {
-								include_usage: true
-							}
-						}
-					: {})
-			},
-			`${WEBUI_BASE_URL}/api`
-		).catch((error) => {
-			console.log(error);
-			responseMessage.error = {
-				content: error
-			};
-			responseMessage.done = true;
-			history.messages[responseMessageId] = responseMessage;
-			return null;
-		});
-
-		console.log(res);
-
-		if (res) {
-			taskId = res.task_id;
-		}
-
-		await tick();
-		scrollToBottom();
 	};
 
 	const handleOpenAIError = async (error, responseMessage) => {
@@ -1974,6 +2191,7 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
+							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
 								<Messages
 									chatId={$chatId}
 									bind:history
