@@ -26,21 +26,23 @@ const cyStyle = [
     style: {
       "background-color": "data(color)",
       label: "data(id)",
-      shape: (ele: NodeSingular) => (ele.data("isStatic") ? "rectangle" : "roundrectangle"),
+      shape: (ele: NodeSingular) => (ele.data("isStatic") ? "roundrectangle" : "roundrectangle"),
       width: (ele: EdgeSingular) => calcNodeWidth(ele.data("id")),
-      color: "#fff",
+      color: "#fff", //font color
       height: "30px",
       "text-valign": "center" as const,
       "text-halign": "center" as const,
-      "font-size": "12px",
+      "font-family": "Arial, sans-serif",
+      "font-size": "10px",
     },
   },
   {
+    //controls arrows between nodes
     selector: "edge",
     style: {
       width: 3,
-      "line-color": "#888",
-      "target-arrow-color": "#888",
+      "line-color": "#ADD8E6",
+      "target-arrow-color": "#ADD8E6",
       "target-arrow-shape": "triangle",
       "curve-style": "straight" as const,
       "text-background-color": "#ffffff",
@@ -77,6 +79,7 @@ const cyStyle = [
   },
 ];
 
+//sets color of the nodes in the graph
 const colorMap = {
   [NodeState.Waiting]: "#888",
   [NodeState.Completed]: "#000",
@@ -121,6 +124,7 @@ export const dataSourceNodeIds = (sources: DataSource[]): string[] => {
 
 const node2cyNode = (node: NodeData, nodeId: string) => {
   const isStatic = !("agent" in node);
+  //NOTE: Think this contains code for color of nodes
   const cyNode = {
     data: {
       id: nodeId,

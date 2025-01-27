@@ -2598,7 +2598,34 @@
 		}
 	};
 </script>
+<style>
+	/* styles for toggle chart button */
+	@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
+	.togglebutton{
+		position: fixed;
+		border-radius: 6px;
+		font-family: "Roboto", serif;
+		font-size: 12px;
+		font-weight: bold;
+		padding: 3px;
+		top: 62px;
+		left: 275px;
+    	/* top: 200px;
+    	left: 300px; */
+	}
+
+	.visiblebutton{
+		position: fixed;
+		outline: 2px solid green;
+	}
+
+	.hiddenbutton{
+		position: fixed;
+		outline: 2px solid red;
+		/* bottom: unset; */
+	} 
+</style>
 <svelte:head>
 	<title>
 		{$chatTitle
@@ -2710,6 +2737,7 @@
 							<div class=" h-full w-full flex flex-col">
 								<!--Cytograph container, hidden for toggeling-->
 								<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} hidden={!cytographVisibleFlag}></div>
+								<button class="togglebutton" class:hiddenbutton={!cytographVisibleFlag}  class:visiblebutton={cytographVisibleFlag} on:click={() => toggleCytoGraph()}> Toggle Graph </button>
 								<Messages
 									chatId={$chatId}
 									bind:history
@@ -2835,8 +2863,4 @@
 			/>
 		</PaneGroup>
 	</div>
-	<main>
-		<!--cytoscape toggle button-->
-		<button on:click={() => toggleCytoGraph()}>CLICK ME</button>
-	</main>
 {/if}
