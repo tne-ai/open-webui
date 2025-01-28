@@ -96,6 +96,10 @@
 				}}
 				on:select={(e) => {
 					console.log(e);
+					if (files.find((f) => f.id === e.detail.id)) {
+						return;
+					}
+
 					files = [
 						...files,
 						{

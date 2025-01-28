@@ -46,7 +46,9 @@
 		getMessageContentParts,
 		extractSentencesForAudio,
 		promptTemplate,
-		splitStream
+		splitStream,
+		sleep,
+		removeDetailsWithReasoning
 	} from '$lib/utils';
 
 	import { generateChatCompletion } from '$lib/apis/ollama';
@@ -125,6 +127,7 @@
 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
 	let selectedToolIds = [];
+	let imageGenerationEnabled = false;
 	let webSearchEnabled = false;
 
 	let chat = null;
@@ -145,9 +148,30 @@
 	$: if (chatIdProp) {
 		(async () => {
 			console.log(chatIdProp);
+
+			prompt = '';
+			files = [];
+			selectedToolIds = [];
+			webSearchEnabled = false;
+			imageGenerationEnabled = false;
+
+			loaded = false;
+
 			if (chatIdProp && (await loadChat())) {
 				await tick();
 				loaded = true;
+
+				if (localStorage.getItem(`chat-input-${chatIdProp}`)) {
+					try {
+						const input = JSON.parse(localStorage.getItem(`chat-input-${chatIdProp}`));
+
+						prompt = input.prompt;
+						files = input.files;
+						selectedToolIds = input.selectedToolIds;
+						webSearchEnabled = input.webSearchEnabled;
+						imageGenerationEnabled = input.imageGenerationEnabled;
+					} catch (e) {}
+				}
 
 				window.setTimeout(() => scrollToBottom(), 0);
 				const chatInput = document.getElementById('chat-input');
@@ -225,9 +249,104 @@
 			const type = event?.data?.type ?? null;
 			const data = event?.data?.data ?? null;
 
-			if (type === 'status') {
-				if (message?.statusHistory) {
-					message.statusHistory.push(data);
+				if (type === 'status') {
+					if (message?.statusHistory) {
+						message.statusHistory.push(data);
+					} else {
+						message.statusHistory = [data];
+					}
+				} else if (type === 'source' || type === 'citation') {
+					if (data?.type === 'code_execution') {
+						// Code execution; update existing code execution by ID, or add new one.
+						if (!message?.code_executions) {
+							message.code_executions = [];
+						}
+
+						const existingCodeExecutionIndex = message.code_executions.findIndex(
+							(execution) => execution.id === data.id
+						);
+
+						if (existingCodeExecutionIndex !== -1) {
+							message.code_executions[existingCodeExecutionIndex] = data;
+						} else {
+							message.code_executions.push(data);
+						}
+
+						message.code_executions = message.code_executions;
+					} else {
+						// Regular source.
+						if (message?.sources) {
+							message.sources.push(data);
+						} else {
+							message.sources = [data];
+						}
+					}
+				} else if (type === 'chat:completion') {
+					chatCompletionEventHandler(data, message, event.chat_id);
+				} else if (type === 'chat:title') {
+					chatTitle.set(data);
+					currentChatPage.set(1);
+					await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				} else if (type === 'chat:tags') {
+					chat = await getChatById(localStorage.token, $chatId);
+					allTags.set(await getAllTags(localStorage.token));
+				} else if (type === 'message') {
+					message.content += data.content;
+				} else if (type === 'replace') {
+					message.content = data.content;
+				} else if (type === 'action') {
+					if (data.action === 'continue') {
+						const continueButton = document.getElementById('continue-response-button');
+
+						if (continueButton) {
+							continueButton.click();
+						}
+					}
+				} else if (type === 'confirmation') {
+					eventCallback = cb;
+
+					eventConfirmationInput = false;
+					showEventConfirmation = true;
+
+					eventConfirmationTitle = data.title;
+					eventConfirmationMessage = data.message;
+				} else if (type === 'execute') {
+					eventCallback = cb;
+
+					try {
+						// Use Function constructor to evaluate code in a safer way
+						const asyncFunction = new Function(`return (async () => { ${data.code} })()`);
+						const result = await asyncFunction(); // Await the result of the async function
+
+						if (cb) {
+							cb(result);
+						}
+					} catch (error) {
+						console.error('Error executing code:', error);
+					}
+				} else if (type === 'input') {
+					eventCallback = cb;
+
+					eventConfirmationInput = true;
+					showEventConfirmation = true;
+
+					eventConfirmationTitle = data.title;
+					eventConfirmationMessage = data.message;
+					eventConfirmationInputPlaceholder = data.placeholder;
+					eventConfirmationInputValue = data?.value ?? '';
+				} else if (type === 'notification') {
+					const toastType = data?.type ?? 'info';
+					const toastContent = data?.content ?? '';
+
+					if (toastType === 'success') {
+						toast.success(toastContent);
+					} else if (toastType === 'error') {
+						toast.error(toastContent);
+					} else if (toastType === 'warning') {
+						toast.warning(toastContent);
+					} else {
+						toast.info(toastContent);
+					}
 				} else {
 					message.statusHistory = [data];
 				}
@@ -362,6 +481,23 @@
 		} else {
 			if ($temporaryChatEnabled) {
 				await goto('/');
+			}
+		}
+
+		if (localStorage.getItem(`chat-input-${chatIdProp}`)) {
+			try {
+				const input = JSON.parse(localStorage.getItem(`chat-input-${chatIdProp}`));
+				prompt = input.prompt;
+				files = input.files;
+				selectedToolIds = input.selectedToolIds;
+				webSearchEnabled = input.webSearchEnabled;
+				imageGenerationEnabled = input.imageGenerationEnabled;
+			} catch (e) {
+				prompt = '';
+				files = [];
+				selectedToolIds = [];
+				webSearchEnabled = false;
+				imageGenerationEnabled = false;
 			}
 		}
 
@@ -547,6 +683,9 @@
 		if ($page.url.searchParams.get('web-search') === 'true') {
 			webSearchEnabled = true;
 		}
+		if ($page.url.searchParams.get('image-generation') === 'true') {
+			imageGenerationEnabled = true;
+		}
 
 		if ($page.url.searchParams.get('tools')) {
 			selectedToolIds = $page.url.searchParams
@@ -685,7 +824,7 @@
 			session_id: $socket?.id,
 			id: responseMessageId
 		}).catch((error) => {
-			toast.error(error);
+			toast.error(`${error}`);
 			messages.at(-1).error = { content: error };
 
 			return null;
@@ -694,13 +833,16 @@
 		if (res !== null) {
 			// Update chat history with the new messages
 			for (const message of res.messages) {
-				history.messages[message.id] = {
-					...history.messages[message.id],
-					...(history.messages[message.id].content !== message.content
-						? { originalContent: history.messages[message.id].content }
-						: {}),
-					...message
-				};
+				if (message?.id) {
+					// Add null check for message and message.id
+					history.messages[message.id] = {
+						...history.messages[message.id],
+						...(history.messages[message.id].content !== message.content
+							? { originalContent: history.messages[message.id].content }
+							: {}),
+						...message
+					};
+				}
 			}
 		}
 
@@ -740,7 +882,7 @@
 			session_id: $socket?.id,
 			id: responseMessageId
 		}).catch((error) => {
-			toast.error(error);
+			toast.error(`${error}`);
 			messages.at(-1).error = { content: error };
 			return null;
 		});
@@ -1002,7 +1144,8 @@
 				history.currentId = responseMessageId;
 
 				// Append messageId to childrenIds of parent message
-				if (parentId !== null) {
+				if (parentId !== null && history.messages[parentId]) {
+					// Add null check before accessing childrenIds
 					history.messages[parentId].childrenIds = [
 						...history.messages[parentId].childrenIds,
 						responseMessageId
@@ -1043,7 +1186,7 @@
 					if ($settings?.memory ?? false) {
 						if (userContext === null) {
 							const res = await queryMemory(localStorage.token, prompt).catch((error) => {
-								toast.error(error);
+								toast.error(`${error}`);
 								return null;
 							});
 							if (res) {
@@ -1121,7 +1264,10 @@
 						}`
 					}
 				: undefined,
-			...createMessagesList(responseMessageId)
+			...createMessagesList(responseMessageId).map((message) => ({
+				...message,
+				content: removeDetailsWithReasoning(message.content)
+			}))
 		]
 			.filter((message) => message?.content?.trim())
 			.map((message) => {
@@ -1621,8 +1767,12 @@
 					frequency_penalty:
 						params?.frequency_penalty ?? $settings?.params?.frequency_penalty ?? undefined,
 					max_tokens: params?.max_tokens ?? $settings?.params?.max_tokens ?? undefined,
-					tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 					files: files.length > 0 ? files : undefined,
+					tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
+					features: {
+						image_generation: imageGenerationEnabled,
+						web_search: webSearchEnabled
+					},
 					session_id: $socket?.id,
 					chat_id: $chatId,
 					id: responseMessageId
@@ -2609,13 +2759,13 @@
 	}}
 />
 
-{#if !chatIdProp || (loaded && chatIdProp)}
-	<div
-		class="h-screen max-h-[100dvh] {$showSidebar
-			? 'md:max-w-[calc(100%-260px)]'
-			: ''} w-full max-w-full flex flex-col"
-		id="chat-container"
-	>
+<div
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out {$showSidebar
+		? '  md:max-w-[calc(100%-260px)]'
+		: ' '} w-full max-w-full flex flex-col"
+	id="chat-container"
+>
+	{#if !chatIdProp || (loaded && chatIdProp)}
 		{#if $settings?.backgroundImageUrl ?? null}
 			<div
 				class="absolute {$showSidebar
@@ -2715,6 +2865,7 @@
 								bind:prompt
 								bind:autoScroll
 								bind:selectedToolIds
+								bind:imageGenerationEnabled
 								bind:webSearchEnabled
 								bind:atSelectedModel
 								transparentBackground={$settings?.backgroundImageUrl ?? false}
@@ -2756,6 +2907,7 @@
 								bind:prompt
 								bind:autoScroll
 								bind:selectedToolIds
+								bind:imageGenerationEnabled
 								bind:webSearchEnabled
 								bind:atSelectedModel
 								transparentBackground={$settings?.backgroundImageUrl ?? false}
@@ -2812,5 +2964,5 @@
 				{eventTarget}
 			/>
 		</PaneGroup>
-	</div>
-{/if}
+	{/if}
+</div>

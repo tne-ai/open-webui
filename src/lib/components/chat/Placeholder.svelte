@@ -38,6 +38,7 @@
 	export let files = [];
 
 	export let selectedToolIds = [];
+	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
 
   	const graphNames = Object.keys(graphDataSet);
@@ -199,6 +200,7 @@
 					bind:prompt
 					bind:autoScroll
 					bind:selectedToolIds
+					bind:imageGenerationEnabled
 					bind:webSearchEnabled
 					bind:atSelectedModel
 					{transparentBackground}
