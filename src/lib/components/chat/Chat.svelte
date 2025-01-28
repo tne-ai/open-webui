@@ -425,7 +425,6 @@
 			}
 
 			history.messages[event.message_id] = message;
-		}
 	};
 
 	const onMessageHandler = async (event: {
