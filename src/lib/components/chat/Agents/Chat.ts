@@ -7,11 +7,33 @@ export const Chat = {
     llmEngine: {
       value: ""
     },
+    requestBody: {
+      value: {}
+    },
+    token: {
+      value: "",
+    },
+    url: {
+      value: "",
+    },
+    socket: {
+      value: null,
+    },
+    openwebui: {
+      agent: "openWebuiAgent",
+      params: {
+        token: ":token",
+        body: ":requestBody",
+        url: ":url",
+      },
+    },
     llm: {
       agent: ":llmEngine",
-      isResult: true,
-      inputs: { messages: ":chatHistory" },
-      console: true
-    },
+      inputs: {
+        prompt: ":openwebui.data",
+        system: "Give the input back verbatim"
+      },
+      isResult: true
+    }
   },
 };

@@ -1050,6 +1050,7 @@ async def process_chat_response(
     if event_emitter:
 
         task_id = str(uuid4())  # Create a unique task ID.
+        final_content = None
 
         # Handle as a background task
         async def post_response_handler(response, events):

@@ -36,7 +36,7 @@ from fastapi import (
 from fastapi.openapi.docs import get_swagger_ui_html
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -893,6 +893,68 @@ async def chat_completion(
             detail=str(e),
         )
 
+
+@app.post("/api/chat/graphai/completions")
+async def chat_completion_graphai(
+        request: Request,
+        form_data: dict,
+        user=Depends(get_verified_user),
+):
+    if not request.app.state.MODELS:
+        await get_all_models(request)
+
+    tasks = form_data.pop("background_tasks", None)
+
+    try:
+        model_id = form_data.get("model", None)
+        if model_id not in request.app.state.MODELS:
+            raise Exception("Model not found")
+
+        model = request.app.state.MODELS[model_id]
+
+        # Check if user has access to the model
+        if not BYPASS_MODEL_ACCESS_CONTROL and user.role == "user":
+            try:
+                check_model_access(user, model)
+            except Exception as e:
+                raise e
+
+        metadata = {
+            "user_id": user.id,
+            "chat_id": form_data.pop("chat_id", None),
+            "message_id": form_data.pop("id", None),
+            "session_id": form_data.pop("session_id", None),
+            "tool_ids": form_data.get("tool_ids", None),
+            "files": form_data.get("files", None),
+            "features": form_data.get("features", None),
+        }
+        form_data["metadata"] = metadata
+
+        form_data, events = await process_chat_payload(
+            request, form_data, metadata, user, model
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    try:
+        response = await chat_completion_handler(request, form_data, user)
+
+        async def body_iterator(response):
+            async for chunk in response.body_iterator:
+                yield chunk
+
+        return StreamingResponse(
+            body_iterator(response),
+            media_type="text/event-stream"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 # Alias for chat_completion (Legacy)
 generate_chat_completions = chat_completion
