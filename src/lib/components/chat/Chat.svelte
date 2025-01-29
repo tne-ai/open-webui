@@ -97,6 +97,7 @@
   	import { fetchAgent, wikipediaAgent } from "@graphai/service_agents";
   	import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   	import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
+	import { openWebuiAgent } from "@tne/tne-agent-v2/lib/agents/openwebui/browser";
   	import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
 	export let chatIdProp = '';
@@ -1487,7 +1488,7 @@
 		currentChatPage.set(1);
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	};
-	const sendPromptGraphAI = async (model, llmEngine, userPrompt, responseMessageId, _chatId) => {
+	const sendPromptGraphAI = async (model, llmEngine, userPrompt, body, responseMessageId, socket, _chatId) => {
 		let _response: string | null = null;
 
 		const responseMessage = history.messages[responseMessageId];
@@ -1528,7 +1529,7 @@
 			);
 
 	  let lastNodeId: string | null = null;
-      const outsideFunction = (context: AgentFunctionContext, token: string) => {
+      const graphaiEventHandler = (context: AgentFunctionContext, token: string) => {
 	    if (context.debugInfo.nodeId !== lastNodeId && lastNodeId !== null) {
 			responseMessage.content = (responseMessage.content ?? "") + "\n\n" + token;
 		} else {
@@ -1556,7 +1557,8 @@
 	  	}
 	    history.messages[responseMessageId] = responseMessage;
       };
-      const streamAgentFilter = streamAgentFilterGenerator<string>(outsideFunction);
+
+      const streamAgentFilter = streamAgentFilterGenerator<string>(graphaiEventHandler);
       // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
       const serverAgents = [];
       const agentFilters = [
@@ -1613,11 +1615,24 @@
           stream: true,
         },
       };
-      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, fetchAgent, wikipediaAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
+
+      const graphai = new GraphAI(graphData, {...agents, openAIAgent, anthropicAgent, fetchAgent, wikipediaAgent, s3FileAgent, codeGenerationTemplateAgent, pythonCodeAgent, openWebuiAgent }, {agentFilters, bypassAgentIds: serverAgents, config});
       const messages = (messagesBody ?? []).map(message => {
         const { role, content } = message;
         return { role, content };
       });
+	  if (graphai.nodes["token"]) {
+		  graphai.injectValue("token", localStorage.token);
+	  }
+	  if (graphai.nodes["socketOpts"]) {
+		  graphai.injectValue("socket", socket.io.opts);
+	  }
+	  if (graphai.nodes["url"]) {
+		  graphai.injectValue("url", WEBUI_BASE_URL);
+	  }
+	  if (graphai.nodes["requestBody"]) {
+		  graphai.injectValue("requestBody", body);
+	  }
 	  if (graphai.nodes["modelName"]) {
 		  graphai.injectValue("modelName", modelToInject);
 	  }
@@ -1777,60 +1792,62 @@
 			}));
 
 
+		 const body = {
+			  stream: stream,
+			  model: model.id,
+			  messages: messages,
+			  params: {
+				  ...$settings?.params,
+				  ...params,
+
+				  format: $settings.requestFormat ?? undefined,
+				  keep_alive: $settings.keepAlive ?? undefined,
+				  stop:
+						   (params?.stop ?? $settings?.params?.stop ?? undefined)
+									? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
+											 (str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
+									)
+									: undefined
+			  },
+
+			  files: (files?.length ?? 0) > 0 ? files : undefined,
+			  tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
+			  features: {
+				  image_generation: imageGenerationEnabled,
+				  web_search: webSearchEnabled
+			  },
+
+			  session_id: $socket?.id,
+			  chat_id: $chatId,
+			  id: responseMessageId,
+
+			  ...(!$temporaryChatEnabled &&
+			  (messages.length == 1 ||
+					  (messages.length == 2 &&
+							   messages.at(0)?.role === 'system' &&
+							   messages.at(1)?.role === 'user')) &&
+			  selectedModels[0] === model.id
+					  ? {
+						   background_tasks: {
+							   title_generation: $settings?.title?.auto ?? true,
+							   tags_generation: $settings?.autoTags ?? true
+						   }
+					  }
+					  : {}),
+
+			  ...(stream && (model.info?.meta?.capabilities?.usage ?? false)
+					  ? {
+						   stream_options: {
+							   include_usage: true
+						   }
+					  }
+					  : {})
+	    }
+
 		if (!graphId) {
 			const res = await generateOpenAIChatCompletion(
 					localStorage.token,
-					{
-						stream: stream,
-						model: model.id,
-						messages: messages,
-						params: {
-							...$settings?.params,
-							...params,
-
-							format: $settings.requestFormat ?? undefined,
-							keep_alive: $settings.keepAlive ?? undefined,
-							stop:
-									(params?.stop ?? $settings?.params?.stop ?? undefined)
-											? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
-													(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
-											)
-											: undefined
-						},
-
-						files: (files?.length ?? 0) > 0 ? files : undefined,
-						tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
-						features: {
-							image_generation: imageGenerationEnabled,
-							web_search: webSearchEnabled
-						},
-
-						session_id: $socket?.id,
-						chat_id: $chatId,
-						id: responseMessageId,
-
-						...(!$temporaryChatEnabled &&
-						(messages.length == 1 ||
-								(messages.length == 2 &&
-										messages.at(0)?.role === 'system' &&
-										messages.at(1)?.role === 'user')) &&
-						selectedModels[0] === model.id
-								? {
-									background_tasks: {
-										title_generation: $settings?.title?.auto ?? true,
-										tags_generation: $settings?.autoTags ?? true
-									}
-								}
-								: {}),
-
-						...(stream && (model.info?.meta?.capabilities?.usage ?? false)
-								? {
-									stream_options: {
-										include_usage: true
-									}
-								}
-								: {})
-					},
+					body,
 					`${WEBUI_BASE_URL}/api`
 			).catch((error) => {
 				console.log(error);
@@ -1841,7 +1858,6 @@
 				history.messages[responseMessageId] = responseMessage;
 				return null;
 			});
-
 			console.log(res);
 
 			if (res) {
@@ -1851,7 +1867,7 @@
 			await tick();
 			scrollToBottom();
 		} else {
-			const res = await sendPromptGraphAI(model, "openAIAgent", prompt, responseMessageId, _chatId);
+			const res = await sendPromptGraphAI(model, "openAIAgent", prompt, body, responseMessageId, $socket, _chatId);
 			if (res) {
 				taskId = res.task_id;
 			}
