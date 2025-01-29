@@ -1,14 +1,37 @@
 export const LocalAnalyze = {
   version: 0.5,
   nodes: {
-    userPrompt: {
-      value: "",
-    },
     chatHistory: {
       value: []
     },
     llmEngine: {
       value: "",
+    },
+    requestBody: {
+      value: {}
+    },
+    token: {
+      value: "",
+    },
+    url: {
+      value: "",
+    },
+    openwebui: {
+      agent: "openWebuiAgent",
+      params: {
+        token: ":token",
+        body: ":requestBody",
+        url: ":url",
+      },
+    },
+    query: {
+      agent: "copyAgent",
+      inputs: {
+        data: ":openwebui.data"
+      },
+      params: {
+        namedKey: "data"
+      },
     },
     difficultyClassifier: {
       agent: "s3FileAgent",
@@ -21,7 +44,7 @@ export const LocalAnalyze = {
     analyzeDifficulty: {
       agent: ":llmEngine",
       inputs: {
-        prompt: ":userPrompt",
+        prompt: ":query",
         system: ["CACHE", "\n\n", ":difficultyClassifier.text", "\n\n", "Determine if the user is asking a question from the cache. If they are, output EXACTLY the corresponding code wrapped in ``` and NOTHING ELSE. Do NOT output an explanation under any circumstances. Otherwise, output EXACTLY False"]
       },
       isResult: true
@@ -214,7 +237,7 @@ export const LocalAnalyze = {
       unless: ":highDifficulty",
       isResult: true,
       inputs: {
-        prompt: ":userPrompt",
+        prompt: ":query",
         system: ["[Answer: ", ":parsedResultsEasy", "]\n\n", ":chatExplainPrompt.text", "\n\n", "This should be polished for a non-technical user. Give adequate details."]
       }
     }
