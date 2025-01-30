@@ -1634,7 +1634,6 @@
         return { role, content };
       });
 	  if (graphai.nodes["token"]) {
-		  console.log(localStorage.token);
 		  graphai.injectValue("token", localStorage.token);
 	  }
 	  if (graphai.nodes["socketOpts"]) {
