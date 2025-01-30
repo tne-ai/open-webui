@@ -64,7 +64,7 @@
 		getTagsById,
 		updateChatById
 	} from '$lib/apis/chats';
-	import { generateOpenAIChatCompletion } from '$lib/apis/openai';
+	import { generateOpenAIChatCompletion, getOpenAIConfig } from '$lib/apis/openai';
 	import { processWeb, processWebSearch, processYoutubeVideo } from '$lib/apis/retrieval';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
 	import { queryMemory } from '$lib/apis/memories';
@@ -1596,11 +1596,15 @@
 		   modelToInject = model.id;
 	  }
 
+	  const openAIConfig = await getOpenAIConfig(localStorage.token);
+	  const openAIAPIKey = openAIConfig.OPENAI_API_KEYS[model?.urlIdx];
+
 	  let openAIBaseURL: string;
 	  if (model?.owned_by === 'ollama') {
 		  openAIBaseURL = "http://127.0.0.1:11434/v1";
 	  } else {
-		  openAIBaseURL = "https://api.openai.com/v1";
+		  const openAIConfig = await getOpenAIConfig(localStorage.token);
+		  openAIBaseURL = openAIConfig.OPENAI_API_BASE_URLS[model?.urlIdx];
 	  }
 
       const config = {
@@ -1612,7 +1616,7 @@
         codeGenerationTemplateAgent: { credentials: s3Credentials },
         openAIAgent: {
           forWeb: true,
-          apiKey: import.meta.env.VITE_OPEN_API_KEY,
+          apiKey: openAIAPIKey,
           stream: true,
 		  baseURL: openAIBaseURL,
 		  model: modelToInject
@@ -1630,6 +1634,7 @@
         return { role, content };
       });
 	  if (graphai.nodes["token"]) {
+		  console.log(localStorage.token);
 		  graphai.injectValue("token", localStorage.token);
 	  }
 	  if (graphai.nodes["socketOpts"]) {
