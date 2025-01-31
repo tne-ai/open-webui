@@ -2615,6 +2615,21 @@
     	left: 300px; */
 	}
 
+	/* when window shrinks, button moves to top left when sidebar disapears */
+	@media(max-width: 776px)
+	{
+		.togglebutton{
+		position: fixed;
+		border-radius: 6px;
+		font-family: "Roboto", serif;
+		font-size: 12px;
+		font-weight: bold;
+		padding: 3px;
+		top: 62px;
+		left: 10px;
+		}
+	}
+
 	.visiblebutton{
 		position: fixed;
 		outline: 2px solid green;
