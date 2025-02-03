@@ -2,7 +2,6 @@ import { onMount } from "svelte";
 import type { GraphData, NodeData } from "graphai";
 import { NodeState, sleep, isObject } from "graphai";
 import type { DataSource } from "graphai/lib/type";
-import { selectedGraph } from '../../stores/index'
 
 import cytoscape from "cytoscape";
 import type { Core, NodeSingular, NodeDefinition, EdgeDefinition, EdgeSingular, Position, EdgeDataDefinition } from "cytoscape";
@@ -27,21 +26,23 @@ const cyStyle = [
     style: {
       "background-color": "data(color)",
       label: "data(id)",
-      shape: (ele: NodeSingular) => (ele.data("isStatic") ? "rectangle" : "roundrectangle"),
+      shape: (ele: NodeSingular) => (ele.data("isStatic") ? "roundrectangle" : "roundrectangle"),
       width: (ele: EdgeSingular) => calcNodeWidth(ele.data("id")),
-      color: "#fff",
+      color: "#fff", //font color
       height: "30px",
       "text-valign": "center" as const,
       "text-halign": "center" as const,
-      "font-size": "12px",
+      "font-family": "Arial, sans-serif",
+      "font-size": "10px",
     },
   },
   {
+    //controls arrows between nodes
     selector: "edge",
     style: {
       width: 3,
-      "line-color": "#888",
-      "target-arrow-color": "#888",
+      "line-color": "#ADD8E6",
+      "target-arrow-color": "#ADD8E6",
       "target-arrow-shape": "triangle",
       "curve-style": "straight" as const,
       "text-background-color": "#ffffff",
@@ -78,6 +79,7 @@ const cyStyle = [
   },
 ];
 
+//sets color of the nodes in the graph
 const colorMap = {
   [NodeState.Waiting]: "#888",
   [NodeState.Completed]: "#000",
@@ -122,6 +124,7 @@ export const dataSourceNodeIds = (sources: DataSource[]): string[] => {
 
 const node2cyNode = (node: NodeData, nodeId: string) => {
   const isStatic = !("agent" in node);
+  //NOTE: Think this contains code for color of nodes
   const cyNode = {
     data: {
       id: nodeId,
@@ -313,7 +316,6 @@ export const useCytoscape = () => {
   };
 
   const resetCytoscape = () => {
-    console.log(selectedGraph);
     const elements = cytoscapeData.elements;
     Object.keys(elements.map).forEach((nodeId) => {
       const nodeData = selectedGraph.nodes[nodeId];
@@ -329,14 +331,14 @@ export const useCytoscape = () => {
       cytoscapeRef = tmp;
     }
   };
-  
+
   return {
     setRef,
     createCytoscape,
     updateCytoscape,
     resetCytoscape,
     updateGraphData,
-    
+
     zoomingEnabled,
   };
 };

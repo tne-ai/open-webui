@@ -156,9 +156,9 @@
   	let graphData;
 	$: graphData = graphId ? graphDataSet[graphId] : null;
 
-  	// cytoscape (disabled for now)
+  	// Cytoscape
   	let cytoscapeRef = null;
-	/*
+	let cytographVisibleFlag = true;
   	let {
     	setRef,
     	createCytoscape,
@@ -174,7 +174,17 @@
   	$: if (graphData) {
 		updateGraphData(graphData);
   	}
-	*/
+
+  	// Toggle cytoscape graph
+    function toggleCytoGraph(){
+		cytographVisibleFlag = !cytographVisibleFlag;
+
+		if (cytographVisibleFlag == false) {
+			console.log("GRAPH TURNED OFF");
+		} else {
+			console.log("GRAPH TURNED BACK ON");
+		}
+    }
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -1658,7 +1668,7 @@
 	      graphai.injectValue("userPrompt", userMessage.content);
       }
       graphai.onLogCallback = ({ nodeId, agentId, state, inputs, result, errorMessage }) => {
-        // updateCytoscape(nodeId, state);
+        updateCytoscape(nodeId, state);
         if (result) {
           console.log(`${nodeId} ${agentId} ${state} ${JSON.stringify(result)}`);
         } else {
@@ -2211,7 +2221,8 @@
 							}}
 						>
 							<div class=" h-full w-full flex flex-col">
-							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef}></div>
+							<div class="pt-2 h-2/6 w-full pt-8" bind:this={cytoscapeRef} hidden={!cytographVisibleFlag}></div>
+							<button class="togglebutton" class:hiddenbutton={!cytographVisibleFlag}  class:visiblebutton={cytographVisibleFlag} on:click={() => toggleCytoGraph()}> Toggle Graph </button>
 								<Messages
 									chatId={$chatId}
 									bind:history
