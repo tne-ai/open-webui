@@ -16,24 +16,15 @@ export const Chat = {
     url: {
       value: "",
     },
-    socket: {
-      value: null,
-    },
     openwebui: {
       agent: "openWebuiAgent",
       params: {
         token: ":token",
         body: ":requestBody",
-        url: ":url",
+        base_url: ":url",
       },
-    },
-    llm: {
-      agent: ":llmEngine",
-      inputs: {
-        prompt: ":openwebui.data",
-        system: "Give the input back verbatim"
-      },
-      isResult: true
+      isResult: true,
+      console: true
     }
   },
 };

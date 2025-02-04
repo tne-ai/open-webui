@@ -97,7 +97,7 @@
   	import { fetchAgent, wikipediaAgent } from "@graphai/service_agents";
   	import { s3FileAgent } from "@tne/tne-agent-v2/lib/agents/browser";
   	import { codeGenerationTemplateAgent, pythonCodeAgent } from "@tne/tne-agent-v2/lib/agents/python/browser";
-	import { openWebuiAgent } from "@tne/tne-agent-v2/lib/agents/openwebui/browser";
+	import { openWebuiAgent } from "@tne/tne-agent-v2/lib/agents/openwebui";
   	import { streamAgentFilterGenerator, httpAgentFilter } from "@graphai/agent_filters";
 
 	export let chatIdProp = '';
@@ -1559,7 +1559,6 @@
       };
 
       const streamAgentFilter = streamAgentFilterGenerator<string>(graphaiEventHandler);
-      // const serverAgents = ["pythonCodeAgent", "codeGenerationTemplateAgent"];
       const serverAgents = [];
       const agentFilters = [
         {
@@ -1632,6 +1631,7 @@
 		  graphai.injectValue("socket", socket.io.opts);
 	  }
 	  if (graphai.nodes["url"]) {
+		  console.log(WEBUI_BASE_URL);
 		  graphai.injectValue("url", WEBUI_BASE_URL);
 	  }
 	  if (graphai.nodes["requestBody"]) {
