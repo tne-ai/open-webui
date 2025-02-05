@@ -17,14 +17,14 @@ To access our custom features, you'll need to run both the Node frontend and Pyt
 
 ### Frontend
 
-```json
+```console
 yarn install
 yarn dev
 ```
 
 ### Backend 
 
-```json
+```console
 cd backend
 uv run sh dev.sh
 ```
@@ -33,7 +33,7 @@ uv run sh dev.sh
 
 To access our S3 resources, ensure that the following environment variables are correctly set. 
 
-```json
+```
 VITE_AWS_KEY=<AWS_ACCESS_KEY_ID>  // This should start with AKIA
 VITE_AWS_SECRET_SECRET=<AWS_SECRET_ACCESS_KEY>  // Corresponding secret 
 ```
@@ -53,7 +53,9 @@ A list of autocomplete workflows will appear, and you can either select one or t
 Source code for GraphAI workflows in this OpenWebUI distribution is in [this directory](src/lib/components/chat/Agents). These are useful examples
 for starting to get acquainted with GraphAI syntax.
 
-To add a new workflow, add the file in the `Agents` directory, then make sure you add the file to [index.ts](src/lib/components/chat/Agents/index.ts).
+To add a new workflow, add the file in the `Agents` directory, then make sure you add the file to [index.ts](src/lib/components/chat/Agents/index.ts). After adding, it will become available in the autocompletion system.
+
+We are currently developing a more user-friendly experience for editing and storing GraphAI workflows in the user interface.
 
 ### GraphAI Resources 
 

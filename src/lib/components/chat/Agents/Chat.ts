@@ -22,9 +22,22 @@ export const Chat = {
         token: ":token",
         body: ":requestBody",
         base_url: ":url",
+        stream: true
       },
       isResult: true,
       console: true
     }
+    /*
+    llm: {
+      agent: ":llmEngine",
+      inputs: {
+        messages: ":chatHistory"
+      },
+      params: {
+        stream: true
+      },
+      isResult: true
+    }
+    */
   },
 };

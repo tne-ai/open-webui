@@ -951,7 +951,7 @@ async def chat_completion_graphai(
         }
         form_data["metadata"] = metadata
 
-        form_data, events = await process_chat_payload(
+        form_data, metadata, events = await process_chat_payload(
             request, form_data, metadata, user, model
         )
     except Exception as e:

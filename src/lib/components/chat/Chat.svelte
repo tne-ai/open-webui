@@ -1241,6 +1241,8 @@
 			);
 
 			history.messages[message.id] = message;
+			console.log(createMessagesList(history, message.id));
+			console.log(message.id);
 			await chatCompletedHandler(
 				chatId,
 				message.model,
@@ -1488,7 +1490,7 @@
 		currentChatPage.set(1);
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	};
-	const sendPromptGraphAI = async (model, llmEngine, userPrompt, body, responseMessageId, socket, _chatId) => {
+	const sendPromptGraphAI = async (model, llmEngine, userPrompt, body, responseMessageId, socket, _chatId, _history) => {
 		let _response: string | null = null;
 
 		const responseMessage = history.messages[responseMessageId];
@@ -1516,7 +1518,7 @@
 						}`
 					}
 					: undefined,
-				...createMessagesList(responseMessageId)
+				...createMessagesList(_history, responseMessageId)
 			].filter(message => message?.content?.trim());
 
 			// Dispatch start event
@@ -1627,11 +1629,7 @@
 	  if (graphai.nodes["token"]) {
 		  graphai.injectValue("token", localStorage.token);
 	  }
-	  if (graphai.nodes["socketOpts"]) {
-		  graphai.injectValue("socket", socket.io.opts);
-	  }
 	  if (graphai.nodes["url"]) {
-		  console.log(WEBUI_BASE_URL);
 		  graphai.injectValue("url", WEBUI_BASE_URL);
 	  }
 	  if (graphai.nodes["requestBody"]) {
@@ -1670,15 +1668,16 @@
 	  }
 
 		// Save the chat
-		await saveChatHandler(_chatId);
-		history.messages[responseMessageId] = responseMessage;
+		await saveChatHandler(_chatId, _history);
+		_history.messages[responseMessageId] = responseMessage;
 
 		// Handle chat completion
+		console.log(createMessagesList(_history, responseMessageId));
 		await chatCompletedHandler(
 			_chatId,
 			model.id,
 			responseMessageId,
-			createMessagesList(responseMessageId)
+			createMessagesList(_history, responseMessageId)
 		);
 
 		await tick();
@@ -1862,7 +1861,6 @@
 				history.messages[responseMessageId] = responseMessage;
 				return null;
 			});
-			console.log(res);
 
 			if (res) {
 				taskId = res.task_id;
@@ -1871,101 +1869,10 @@
 			await tick();
 			scrollToBottom();
 		} else {
-			const res = await sendPromptGraphAI(model, "openAIAgent", prompt, body, responseMessageId, $socket, _chatId);
+			const res = await sendPromptGraphAI(model, "openAIAgent", prompt, body, responseMessageId, $socket, _chatId, _history);
 			if (res) {
 				taskId = res.task_id;
 			}
-		}
-		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				stream: stream,
-				model: model.id,
-				messages: messages,
-				params: {
-					...$settings?.params,
-					...params,
-
-					format: $settings.requestFormat ?? undefined,
-					keep_alive: $settings.keepAlive ?? undefined,
-					stop:
-						(params?.stop ?? $settings?.params?.stop ?? undefined)
-							? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
-									(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
-								)
-							: undefined
-				},
-
-				files: (files?.length ?? 0) > 0 ? files : undefined,
-				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
-
-				features: {
-					image_generation:
-						$config?.features?.enable_image_generation &&
-						($user.role === 'admin' || $user?.permissions?.features?.image_generation)
-							? imageGenerationEnabled
-							: false,
-					code_interpreter:
-						$user.role === 'admin' || $user?.permissions?.features?.code_interpreter
-							? codeInterpreterEnabled
-							: false,
-					web_search:
-						$config?.features?.enable_web_search &&
-						($user.role === 'admin' || $user?.permissions?.features?.web_search)
-							? webSearchEnabled || ($settings?.webSearch ?? false) === 'always'
-							: false
-				},
-				variables: {
-					...getPromptVariables(
-						$user.name,
-						$settings?.userLocation ? await getAndUpdateUserLocation(localStorage.token) : undefined
-					)
-				},
-
-				session_id: $socket?.id,
-				chat_id: $chatId,
-				id: responseMessageId,
-
-				...(!$temporaryChatEnabled &&
-				(messages.length == 1 ||
-					(messages.length == 2 &&
-						messages.at(0)?.role === 'system' &&
-						messages.at(1)?.role === 'user')) &&
-				selectedModels[0] === model.id
-					? {
-							background_tasks: {
-								title_generation: $settings?.title?.auto ?? true,
-								tags_generation: $settings?.autoTags ?? true
-							}
-						}
-					: {}),
-
-				...(stream && (model.info?.meta?.capabilities?.usage ?? false)
-					? {
-							stream_options: {
-								include_usage: true
-							}
-						}
-					: {})
-			},
-			`${WEBUI_BASE_URL}/api`
-		).catch((error) => {
-			toast.error(`${error}`);
-
-			responseMessage.error = {
-				content: error
-			};
-			responseMessage.done = true;
-
-			history.messages[responseMessageId] = responseMessage;
-			history.currentId = responseMessageId;
-			return null;
-		});
-
-		console.log(res);
-
-		if (res) {
-			taskId = res.task_id;
 		}
 
 		await tick();
