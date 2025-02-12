@@ -1,4 +1,4 @@
-export const iterativeAnalysis = {
+export const IterativeAnalysis = {
   version: 0.5,
   nodes: {
     chatHistory: {
@@ -232,52 +232,6 @@ export const iterativeAnalysis = {
         prompt: ['[Answer: ', ':parsedResults', ']'],
         system:
           "You are given a user chat session and an answer to the latest user query computed from a workflow. Summarize the answer in a way that the user will feel that it is a natural response to their question; you are the front-end of this chat system. Don't make up any details; only summarize direct info that is given to you. If you are given tabular data, a markdown table is preferable.",
-      },
-    },
-  },
-};
-
-export const graphChat = {
-  version: 0.5,
-  //loop: {
-  //while: ":continue",
-  //},
-  nodes: {
-    continue: {
-      value: true,
-      update: ':checkInput',
-    },
-    chatHistory: {
-      value: [],
-      update: ':reducer.array',
-    },
-    userPrompt: {
-      value: 'hello',
-    },
-    checkInput: {
-      // Checks if the user wants to terminate the chat or not.
-      agent: 'compareAgent',
-      inputs: { array: [':userPrompt', '!=', '/bye'] },
-    },
-    llm: {
-      agent: 'openAIAgent',
-      isResult: true,
-      inputs: { messages: ':chatHistory', prompt: ':userPrompt.text' },
-    },
-    output: {
-      agent: 'stringTemplateAgent',
-      inputs: {
-        text: '\x1b[32mAgent\x1b[0m: ${:llm.text}',
-      },
-    },
-    reducer: {
-      agent: 'pushAgent',
-      inputs: {
-        array: ':chatHistory',
-        items: [
-          ':userPrompt.message',
-          { content: ':llm.text', role: 'assistant' },
-        ],
       },
     },
   },

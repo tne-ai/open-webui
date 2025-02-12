@@ -1,12 +1,6 @@
-export const Chat = {
+export const OWUI = {
   version: 0.5,
   nodes: {
-    chatHistory: {
-      value: []
-    },
-    llmEngine: {
-      value: ""
-    },
     requestBody: {
       value: {}
     },
@@ -25,19 +19,6 @@ export const Chat = {
         stream: true
       },
       isResult: true,
-      console: true
     }
-    /*
-    llm: {
-      agent: ":llmEngine",
-      inputs: {
-        messages: ":chatHistory"
-      },
-      params: {
-        stream: true
-      },
-      isResult: true
-    }
-    */
-  },
+  }
 };

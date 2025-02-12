@@ -1,4 +1,4 @@
-export const Generator = {
+export const Weather = {
   version: 0.5,
   nodes: {
     chatHistory: {

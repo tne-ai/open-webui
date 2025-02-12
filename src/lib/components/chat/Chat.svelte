@@ -1561,7 +1561,7 @@
       };
 
       const streamAgentFilter = streamAgentFilterGenerator<string>(graphaiEventHandler);
-      const serverAgents = [];
+      const serverAgents: string[] = [];
       const agentFilters = [
         {
           name: "streamAgentFilter",
@@ -1589,15 +1589,16 @@
 		   modelToInject = model.id;
 	  }
 
+	  let openAIAPIKey: string;
 	  const openAIConfig = await getOpenAIConfig(localStorage.token);
-	  const openAIAPIKey = openAIConfig.OPENAI_API_KEYS[model?.urlIdx];
 
 	  let openAIBaseURL: string;
 	  if (model?.owned_by === 'ollama') {
 		  openAIBaseURL = "http://127.0.0.1:11434/v1";
+		  openAIAPIKey = openAIConfig.OPENAI_API_KEYS[0]; // Dummy key
 	  } else {
-		  const openAIConfig = await getOpenAIConfig(localStorage.token);
 		  openAIBaseURL = openAIConfig.OPENAI_API_BASE_URLS[model?.urlIdx];
+		  openAIAPIKey = openAIConfig.OPENAI_API_KEYS[model?.urlIdx];
 	  }
 
       const config = {

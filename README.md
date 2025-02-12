@@ -35,7 +35,7 @@ To access our S3 resources, ensure that the following environment variables are 
 
 ```
 VITE_AWS_KEY=<AWS_ACCESS_KEY_ID>  // This should start with AKIA
-VITE_AWS_SECRET_SECRET=<AWS_SECRET_ACCESS_KEY>  // Corresponding secret 
+VITE_AWS_SECRET=<AWS_SECRET_ACCESS_KEY>  // Corresponding secret 
 ```
 
 To add new OpenAI-compatible APIs, use the OpenWebUI frontend, and GraphAI will be compatible with the key.
@@ -71,3 +71,8 @@ We've implemented several custom TNE agents for our specific use cases as well. 
 * [PythonCodeAgent](https://github.com/tne-ai/troopship/blob/659eecf93fa8b15bd7557a7500bfe18f546a063b/highlighter/src/components/Agents/CachedHandbagsChat.ts#L119)
 * [SemanticAgent](https://github.com/tne-ai/troopship/blob/659eecf93fa8b15bd7557a7500bfe18f546a063b/highlighter/src/components/Agents/CachedHandbagsChat.ts#L71)
 * [CodeGenerationTemplateAgent](https://github.com/tne-ai/troopship/blob/659eecf93fa8b15bd7557a7500bfe18f546a063b/highlighter/src/components/Agents/CachedHandbagsChat.ts#L261)
+
+### Code Generation Agents
+
+Certain GraphAI agents may require code execution. The infrastructure for this is currently being developed, but you
+can run a local server using the instructions found [here](https://github.com/tne-ai/troopship/tree/main/code-runner) 
